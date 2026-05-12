@@ -1,0 +1,2576 @@
+diff --git a/src/dashboard/index.html b/src/dashboard/index.html
+index 4574796..b3132b0 100644
+--- a/src/dashboard/index.html
++++ b/src/dashboard/index.html
+@@ -6,32 +6,43 @@
+ <title>WindsurfPoolAPI 控制台</title>
+ <style>
+ :root {
+-  --bg: #09090b;
+-  --bg-elev: #0d0d10;
+-  --surface: #111114;
+-  --surface-2: #17171c;
+-  --surface-3: #1c1c22;
+-  --border: #26262e;
+-  --border-strong: #32323c;
+-  --text: #f4f4f5;
+-  --text-muted: #a1a1aa;
+-  --text-dim: #71717a;
+-  --accent: #6366f1;
+-  --accent-hover: #7c7ff5;
+-  --accent-soft: rgba(99, 102, 241, .14);
+-  --success: #22c55e;
+-  --success-soft: rgba(34, 197, 94, .14);
+-  --warn: #f59e0b;
+-  --warn-soft: rgba(245, 158, 11, .14);
+-  --error: #ef4444;
+-  --error-soft: rgba(239, 68, 68, .14);
+-  --info: #3b82f6;
+-  --info-soft: rgba(59, 130, 246, .14);
+-  --radius: 10px;
++  --bg: #061014;
++  --bg-elev: #0a171d;
++  --bg-depth: #03090d;
++  --surface: #0d1b24;
++  --surface-2: #102531;
++  --surface-3: #163344;
++  --surface-glass: rgba(13, 27, 36, .82);
++  --border: rgba(95, 145, 165, .18);
++  --border-strong: rgba(118, 190, 205, .34);
++  --border-hot: rgba(54, 211, 194, .46);
++  --text: #edf8fb;
++  --text-muted: #9fb8c3;
++  --text-dim: #66818d;
++  --accent: #5b7cfa;
++  --accent-hover: #7d98ff;
++  --accent-soft: rgba(91, 124, 250, .16);
++  --teal: #35d0bd;
++  --teal-soft: rgba(53, 208, 189, .14);
++  --success: #45d483;
++  --success-soft: rgba(69, 212, 131, .14);
++  --warn: #f6b94d;
++  --warn-soft: rgba(246, 185, 77, .14);
++  --error: #ff6978;
++  --error-soft: rgba(255, 105, 120, .14);
++  --info: #45b9ff;
++  --info-soft: rgba(69, 185, 255, .14);
++  --amber: #f8cf6a;
++  --amber-soft: rgba(248, 207, 106, .13);
++  --rose: #ff8aa0;
++  --rose-soft: rgba(255, 138, 160, .12);
++  --focus-ring: 0 0 0 3px rgba(53, 208, 189, .18), 0 0 0 1px rgba(53, 208, 189, .52);
++  --radius: 8px;
+   --radius-sm: 6px;
+-  --radius-lg: 14px;
+-  --shadow: 0 1px 2px rgba(0,0,0,.4), 0 4px 12px rgba(0,0,0,.2);
+-  --shadow-lg: 0 10px 40px rgba(0,0,0,.4);
++  --radius-lg: 12px;
++  --shadow: 0 1px 0 rgba(255,255,255,.03) inset, 0 12px 26px rgba(0,12,18,.22);
++  --shadow-lg: 0 24px 70px rgba(0,10,18,.58), 0 0 0 1px rgba(121,210,220,.08);
++  --shadow-glow: 0 0 0 1px rgba(53,208,189,.12), 0 0 32px rgba(21,129,151,.12);
+   --font: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', system-ui, sans-serif;
+   --mono: 'JetBrains Mono', 'Cascadia Code', 'Fira Code', 'Consolas', monospace;
+ }
+@@ -41,7 +52,11 @@
+ html, body { height: 100%; }
+ body {
+   font-family: var(--font);
+-  background: var(--bg);
++  background:
++    linear-gradient(180deg, rgba(10, 32, 43, .78) 0%, rgba(6, 16, 20, .96) 42%, var(--bg-depth) 100%),
++    repeating-linear-gradient(118deg, rgba(53,208,189,.055) 0 1px, transparent 1px 58px),
++    repeating-linear-gradient(64deg, rgba(91,124,250,.045) 0 1px, transparent 1px 72px),
++    var(--bg);
+   color: var(--text);
+   font-size: 14px;
+   line-height: 1.5;
+@@ -49,19 +64,45 @@ body {
+   -moz-osx-font-smoothing: grayscale;
+   display: flex;
+   min-height: 100vh;
++  overflow-x: hidden;
++}
++body::before {
++  content: '';
++  position: fixed;
++  inset: 0;
++  pointer-events: none;
++  z-index: 0;
++  background:
++    linear-gradient(100deg, transparent 0 12%, rgba(53,208,189,.075) 13%, transparent 24% 100%),
++    linear-gradient(156deg, transparent 0 42%, rgba(248,207,106,.045) 43%, transparent 52% 100%),
++    linear-gradient(180deg, rgba(255,255,255,.025), transparent 34%);
++  mask-image: linear-gradient(180deg, #000 0%, rgba(0,0,0,.75) 58%, transparent 100%);
++}
++body::after {
++  content: '';
++  position: fixed;
++  inset: 0;
++  pointer-events: none;
++  z-index: 0;
++  opacity: .28;
++  background-image:
++    linear-gradient(rgba(255,255,255,.035) 1px, transparent 1px),
++    linear-gradient(90deg, rgba(255,255,255,.028) 1px, transparent 1px);
++  background-size: 64px 64px;
++  mask-image: linear-gradient(180deg, transparent 0%, #000 18%, rgba(0,0,0,.45) 76%, transparent 100%);
+ }
+
+ /* Scrollbar */
+ ::-webkit-scrollbar { width: 10px; height: 10px; }
+ ::-webkit-scrollbar-track { background: transparent; }
+-::-webkit-scrollbar-thumb { background: var(--surface-3); border-radius: 5px; border: 2px solid var(--bg); }
+-::-webkit-scrollbar-thumb:hover { background: var(--border-strong); }
++::-webkit-scrollbar-thumb { background: rgba(95,145,165,.24); border-radius: 5px; border: 2px solid var(--bg); }
++::-webkit-scrollbar-thumb:hover { background: rgba(53,208,189,.36); }
+
+ a { color: var(--accent); text-decoration: none; }
+ code {
+   font-family: var(--mono);
+   font-size: 12px;
+-  background: var(--surface-2);
++  background: rgba(5, 13, 18, .56);
+   color: var(--text);
+   padding: 2px 6px;
+   border-radius: 4px;
+@@ -71,13 +112,16 @@ code {
+ /* ─── Sidebar ──────────────────────────────────── */
+ .sidebar {
+   width: 232px;
+-  background: var(--surface);
++  background:
++    linear-gradient(180deg, rgba(13,31,42,.96), rgba(6,16,21,.98)),
++    var(--surface);
+   border-right: 1px solid var(--border);
+   position: fixed;
+   top: 0; left: 0; bottom: 0;
+   display: flex;
+   flex-direction: column;
+   z-index: 10;
++  box-shadow: 12px 0 34px rgba(0, 8, 12, .26);
+ }
+ .sidebar .brand {
+   padding: 20px 22px 18px;
+@@ -85,16 +129,17 @@ code {
+   align-items: center;
+   gap: 10px;
+   border-bottom: 1px solid var(--border);
++  background: linear-gradient(180deg, rgba(53,208,189,.06), transparent);
+ }
+ .sidebar .brand-logo {
+   width: 32px; height: 32px;
+   border-radius: 8px;
+-  background: linear-gradient(135deg, var(--accent) 0%, #8b5cf6 100%);
++  background: linear-gradient(135deg, var(--teal) 0%, var(--accent) 100%);
+   display: flex; align-items: center; justify-content: center;
+   font-weight: 800; color: #fff; font-size: 15px;
+-  box-shadow: 0 4px 12px rgba(99,102,241,.35);
++  box-shadow: 0 8px 22px rgba(53,208,189,.24);
+ }
+-.sidebar .brand-name { font-size: 15px; font-weight: 600; letter-spacing: -.01em; }
++.sidebar .brand-name { font-size: 15px; font-weight: 600; letter-spacing: 0; }
+ .sidebar .brand-sub { font-size: 11px; color: var(--text-dim); margin-top: 1px; }
+
+ .sidebar nav { flex: 1; padding: 12px 10px; overflow-y: auto; }
+@@ -116,16 +161,22 @@ code {
+   font-size: 13px;
+   font-weight: 500;
+   border-radius: var(--radius-sm);
+-  transition: all .15s;
++  transition: background .15s ease, color .15s ease, box-shadow .15s ease, transform .15s ease;
+   margin-bottom: 2px;
+ }
+-.sidebar nav a:hover { color: var(--text); background: var(--surface-2); }
++.sidebar nav a:hover {
++  color: var(--text);
++  background: linear-gradient(90deg, rgba(53,208,189,.12), rgba(248,207,106,.035));
++  transform: translateX(1px);
++}
+ .sidebar nav a.active {
+   color: var(--text);
+-  background: var(--surface-3);
+-  box-shadow: inset 2px 0 0 var(--accent);
++  background: linear-gradient(90deg, rgba(53,208,189,.16), rgba(91,124,250,.10));
++  box-shadow: inset 2px 0 0 var(--teal), 0 0 0 1px rgba(53,208,189,.08);
+ }
+-.sidebar nav a svg { width: 16px; height: 16px; stroke-width: 2; flex-shrink: 0; }
++.sidebar nav a svg { width: 16px; height: 16px; stroke-width: 2; flex-shrink: 0; opacity: .82; }
++.sidebar nav a:hover svg { color: var(--teal); opacity: 1; }
++.sidebar nav a.active svg { color: var(--amber); opacity: 1; }
+
+ .sidebar .footer {
+   padding: 12px 18px;
+@@ -142,9 +193,16 @@ code {
+ .main {
+   margin-left: 232px;
+   flex: 1;
++  width: calc(100% - 232px);
++  min-width: 0;
+   padding: 28px 36px 40px;
+   min-height: 100vh;
+-  max-width: 1400px;
++  max-width: none;
++  background:
++    linear-gradient(90deg, rgba(53,208,189,.035), transparent 28%),
++    linear-gradient(180deg, rgba(255,255,255,.018), transparent 180px);
++  position: relative;
++  z-index: 1;
+ }
+ .page-header {
+   display: flex;
+@@ -157,14 +215,14 @@ code {
+ .page-title {
+   font-size: 22px;
+   font-weight: 700;
+-  letter-spacing: -.02em;
++  letter-spacing: 0;
+ }
+ .page-subtitle {
+   font-size: 13px;
+   color: var(--text-muted);
+   margin-top: 2px;
+ }
+-.panel { display: none; animation: fadeIn .2s ease; }
++.panel { display: none; animation: fadeIn .24s ease; }
+ .panel.active { display: block; }
+
+ @keyframes fadeIn {
+@@ -174,13 +232,37 @@ code {
+
+ /* ─── Cards ───────────────────────────────────── */
+ .card {
+-  background: var(--surface);
++  position: relative;
++  background:
++    linear-gradient(180deg, rgba(255,255,255,.035), rgba(255,255,255,0)),
++    var(--surface-glass);
+   border: 1px solid var(--border);
+   border-radius: var(--radius);
+   padding: 18px 20px;
+-  transition: border-color .15s;
++  box-shadow: var(--shadow);
++  transition: border-color .18s ease, box-shadow .18s ease, transform .18s ease, background .18s ease;
++  overflow: hidden;
++  min-height: 128px;
++}
++.card::before {
++  content: '';
++  position: absolute;
++  inset: 0 0 auto;
++  height: 1px;
++  background: linear-gradient(90deg, transparent, rgba(255,255,255,.16), transparent);
++  z-index: 0;
++}
++.card::after {
++  content: '';
++  position: absolute;
++  inset: auto -18% -44% 30%;
++  height: 88px;
++  background: linear-gradient(90deg, transparent, rgba(53,208,189,.11), rgba(248,207,106,.055), transparent);
++  transform: rotate(-7deg);
++  pointer-events: none;
++  z-index: 0;
+ }
+-.card:hover { border-color: var(--border-strong); }
++.card:hover { border-color: var(--border-strong); box-shadow: var(--shadow-glow); transform: translateY(-2px); }
+ .card-header {
+   display: flex;
+   align-items: flex-start;
+@@ -188,6 +270,8 @@ code {
+   margin-bottom: 4px;
+ }
+ .card-title {
++  position: relative;
++  z-index: 1;
+   font-size: 12px;
+   font-weight: 500;
+   color: var(--text-muted);
+@@ -195,22 +279,44 @@ code {
+   letter-spacing: .04em;
+ }
+ .card-icon {
+-  width: 18px; height: 18px;
+-  color: var(--text-dim);
++  position: absolute;
++  right: 12px;
++  bottom: 10px;
++  width: 58px;
++  height: 58px;
++  color: currentColor;
++  opacity: .085;
++  pointer-events: none;
++  transform: rotate(-5deg);
++  z-index: 0;
+ }
+ .card-value {
++  position: relative;
++  z-index: 1;
+   font-size: 26px;
+   font-weight: 700;
+-  letter-spacing: -.02em;
++  letter-spacing: 0;
+   line-height: 1.2;
+   margin-top: 6px;
++  font-variant-numeric: tabular-nums;
++  overflow-wrap: anywhere;
++  text-shadow: 0 0 18px rgba(237,248,251,.06);
+ }
+-.card-sub { font-size: 12px; color: var(--text-muted); margin-top: 4px; }
++.card-value.compact {
++  font-size: 20px;
++  line-height: 1.25;
++}
++.card-sub { position: relative; z-index: 1; font-size: 12px; color: var(--text-muted); margin-top: 4px; }
+ .card.accent .card-value { color: var(--accent); }
+ .card.success .card-value { color: var(--success); }
+ .card.warn .card-value { color: var(--warn); }
+ .card.error .card-value { color: var(--error); }
+ .card.info .card-value { color: var(--info); }
++.card.accent .card-icon { color: var(--accent); opacity: .14; }
++.card.success .card-icon { color: var(--success); opacity: .13; }
++.card.warn .card-icon { color: var(--warn); opacity: .14; }
++.card.error .card-icon { color: var(--error); opacity: .13; }
++.card.info .card-icon { color: var(--info); opacity: .13; }
+
+ .metrics-grid {
+   display: grid;
+@@ -221,11 +327,15 @@ code {
+
+ /* ─── Section Block ───────────────────────────── */
+ .section {
+-  background: var(--surface);
++  background:
++    linear-gradient(180deg, rgba(255,255,255,.025), rgba(255,255,255,0) 170px),
++    var(--surface-glass);
+   border: 1px solid var(--border);
+   border-radius: var(--radius);
+   margin-bottom: 20px;
+   overflow: hidden;
++  box-shadow: var(--shadow);
++  backdrop-filter: blur(14px);
+ }
+ .section-header {
+   padding: 16px 20px;
+@@ -239,7 +349,7 @@ code {
+ .section-title {
+   font-size: 14px;
+   font-weight: 600;
+-  letter-spacing: -.01em;
++  letter-spacing: 0;
+ }
+ .section-desc {
+   font-size: 12px;
+@@ -263,48 +373,59 @@ code {
+   border: 1px solid transparent;
+   border-radius: var(--radius-sm);
+   cursor: pointer;
+-  transition: all .15s;
+-  background: var(--surface-2);
++  transition: background .15s ease, border-color .15s ease, color .15s ease, box-shadow .15s ease, transform .12s ease;
++  background: linear-gradient(180deg, rgba(255,255,255,.035), rgba(255,255,255,0)), var(--surface-2);
+   color: var(--text);
+   white-space: nowrap;
+   line-height: 1.2;
++  box-shadow: 0 1px 0 rgba(255,255,255,.035) inset;
+ }
+-.btn:hover:not(:disabled) { background: var(--surface-3); border-color: var(--border-strong); }
++.btn:hover:not(:disabled) { background: var(--surface-3); border-color: var(--border-strong); box-shadow: 0 0 0 3px rgba(53,208,189,.055); }
+ .btn:active:not(:disabled) { transform: translateY(1px); }
+ .btn:disabled { opacity: .5; cursor: not-allowed; }
+ .btn svg { width: 14px; height: 14px; }
++.btn:focus-visible,
++.input:focus-visible,
++.select:focus-visible,
++.textarea:focus-visible,
++.sidebar nav a:focus-visible,
++.checkbox:focus-within .box,
++.switch:focus-within .switch-slider {
++  outline: none;
++  box-shadow: var(--focus-ring);
++}
+
+ .btn-primary {
+-  background: var(--accent);
++  background: linear-gradient(135deg, var(--accent), #4467de);
+   color: #fff;
+   border-color: var(--accent);
+-  box-shadow: 0 1px 3px rgba(99,102,241,.3);
++  box-shadow: 0 8px 18px rgba(91,124,250,.24);
+ }
+-.btn-primary:hover:not(:disabled) { background: var(--accent-hover); border-color: var(--accent-hover); }
++.btn-primary:hover:not(:disabled) { background: linear-gradient(135deg, var(--accent-hover), var(--accent)); border-color: var(--accent-hover); }
+
+ .btn-outline {
+-  background: transparent;
++  background: rgba(5, 16, 22, .24);
+   border-color: var(--border-strong);
+   color: var(--text);
+ }
+-.btn-outline:hover:not(:disabled) { background: var(--surface-2); border-color: var(--accent); }
++.btn-outline:hover:not(:disabled) { background: rgba(53,208,189,.08); border-color: var(--border-hot); }
+
+ .btn-ghost { background: transparent; border-color: transparent; color: var(--text-muted); }
+ .btn-ghost:hover:not(:disabled) { background: var(--surface-2); color: var(--text); }
+
+ .btn-danger {
+-  background: var(--error);
++  background: linear-gradient(135deg, var(--error), #cf3f5b);
+   color: #fff;
+   border-color: var(--error);
+ }
+-.btn-danger:hover:not(:disabled) { background: #dc2626; border-color: #dc2626; }
++.btn-danger:hover:not(:disabled) { background: #e85264; border-color: #e85264; }
+
+ .btn-success {
+-  background: var(--success);
+-  color: #fff;
++  background: linear-gradient(135deg, var(--success), #22bfa8);
++  color: #062017;
+   border-color: var(--success);
+ }
+-.btn-success:hover:not(:disabled) { background: #16a34a; border-color: #16a34a; }
++.btn-success:hover:not(:disabled) { background: #52e09b; border-color: #52e09b; }
+
+ .btn-sm { padding: 5px 10px; font-size: 12px; }
+ .btn-xs { padding: 3px 8px; font-size: 11px; }
+@@ -326,7 +447,7 @@ code {
+   border-radius: 50%; transition: .18s;
+ }
+ .switch input:checked + .switch-slider {
+-  background: var(--accent); border-color: var(--accent);
++  background: linear-gradient(135deg, var(--teal), var(--accent)); border-color: var(--border-hot);
+ }
+ .switch input:checked + .switch-slider::before { transform: translateX(18px); background: #fff; }
+
+@@ -337,24 +458,33 @@ code {
+   padding: 9px 12px;
+   font-size: 13px;
+   font-family: var(--font);
+-  background: var(--bg-elev);
++  background: rgba(3, 11, 15, .58);
+   border: 1px solid var(--border);
+   border-radius: var(--radius-sm);
+   color: var(--text);
+   outline: none;
+-  transition: all .15s;
++  transition: border-color .15s ease, box-shadow .15s ease, background .15s ease;
+   line-height: 1.35;
+ }
+-.input:hover, .select:hover, .textarea:hover { border-color: var(--border-strong); }
++.input:hover, .select:hover, .textarea:hover { border-color: var(--border-strong); background: rgba(6, 20, 27, .72); }
+ .input:focus, .select:focus, .textarea:focus {
+-  border-color: var(--accent);
+-  box-shadow: 0 0 0 3px var(--accent-soft);
++  border-color: var(--border-hot);
++  box-shadow: 0 0 0 3px var(--teal-soft), 0 0 24px rgba(53,208,189,.08);
+ }
+ .input::placeholder, .textarea::placeholder { color: var(--text-dim); }
++input:-webkit-autofill,
++input:-webkit-autofill:hover,
++input:-webkit-autofill:focus {
++  -webkit-text-fill-color: var(--text);
++  caret-color: var(--text);
++  box-shadow: 0 0 0 1000px rgba(3, 11, 15, .92) inset, 0 0 0 3px var(--teal-soft);
++  border-color: var(--border-hot);
++  transition: background-color 9999s ease-out, color 9999s ease-out;
++}
+
+ .select {
+   appearance: none;
+-  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23a1a1aa' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'><polyline points='6 9 12 15 18 9'/></svg>");
++  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%239fb8c3' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'><polyline points='6 9 12 15 18 9'/></svg>");
+   background-repeat: no-repeat;
+   background-position: right 10px center;
+   padding-right: 32px;
+@@ -384,6 +514,84 @@ code {
+   gap: 8px;
+   margin-top: 14px;
+   flex-wrap: wrap;
++  background: linear-gradient(180deg, rgba(53,208,189,.045), rgba(255,255,255,0));
++}
++
++.login-card-import {
++  display: grid;
++  gap: 10px;
++  padding: 14px;
++  margin-bottom: 14px;
++  background: linear-gradient(180deg, rgba(53,208,189,.055), rgba(255,255,255,0)) , var(--bg-elev);
++  border: 1px solid var(--border);
++  border-radius: var(--radius-sm);
++}
++.login-card-import-head {
++  display: flex;
++  align-items: flex-start;
++  justify-content: space-between;
++  gap: 12px;
++}
++.login-card-import-title {
++  font-size: 13px;
++  font-weight: 600;
++  color: var(--text);
++}
++.login-card-import-desc {
++  margin-top: 3px;
++  font-size: 12px;
++  color: var(--text-dim);
++  line-height: 1.5;
++}
++.wl-card-textarea {
++  min-height: 88px;
++  resize: vertical;
++  font-family: var(--mono);
++  line-height: 1.45;
++}
++.wl-card-status {
++  margin-left: auto;
++}
++.wl-card-actions {
++  margin-top: 0;
++}
++.wl-batch-preview {
++  display: flex;
++  flex-wrap: wrap;
++  align-items: center;
++  gap: 6px;
++  min-height: 22px;
++}
++.wl-batch-chip {
++  display: inline-flex;
++  align-items: center;
++  max-width: 280px;
++  padding: 3px 9px;
++  border-radius: 999px;
++  border: 1px solid rgba(53,208,189,.22);
++  background: rgba(53,208,189,.08);
++  color: var(--text-muted);
++  font-size: 11px;
++}
++.wl-batch-chip.invalid {
++  border-color: rgba(246,185,77,.25);
++  background: var(--warn-soft);
++  color: var(--warn);
++}
++.wl-batch-chip span {
++  overflow: hidden;
++  text-overflow: ellipsis;
++  white-space: nowrap;
++}
++.wl-auto-add-option {
++  margin-left: auto;
++}
++.wl-result-table {
++  background: transparent;
++}
++.wl-result-table td:first-child {
++  color: var(--text-muted);
++  width: 120px;
+ }
+
+ /* Input group (prefix + input) */
+@@ -408,13 +616,13 @@ code {
+   display: flex;
+   align-items: center;
+   justify-content: center;
+-  background: var(--bg-elev);
++  background: rgba(3, 11, 15, .62);
+   transition: all .15s;
+   flex-shrink: 0;
+ }
+ .checkbox input:checked + .box {
+-  background: var(--accent);
+-  border-color: var(--accent);
++  background: var(--teal);
++  border-color: var(--teal);
+ }
+ .checkbox input:checked + .box::after {
+   content: '';
+@@ -423,12 +631,12 @@ code {
+   border-width: 0 2px 2px 0;
+   transform: rotate(45deg) translateY(-1px);
+ }
+-.checkbox:hover .box { border-color: var(--accent); }
++.checkbox:hover .box { border-color: var(--border-hot); }
+
+ /* Tab-style radio group */
+ .segmented {
+   display: inline-flex;
+-  background: var(--bg-elev);
++  background: rgba(3, 11, 15, .58);
+   border: 1px solid var(--border);
+   border-radius: var(--radius-sm);
+   padding: 3px;
+@@ -441,21 +649,22 @@ code {
+   color: var(--text-muted);
+   cursor: pointer;
+   border-radius: 5px;
+-  transition: all .15s;
++  transition: background .15s ease, color .15s ease, box-shadow .15s ease;
+   position: relative;
+ }
+ .segmented label input { position: absolute; opacity: 0; pointer-events: none; }
+ .segmented label:hover { color: var(--text); }
+ .segmented label:has(input:checked) {
+-  background: var(--surface-3);
++  background: linear-gradient(135deg, rgba(53,208,189,.16), rgba(91,124,250,.10));
+   color: var(--text);
+-  box-shadow: 0 1px 2px rgba(0,0,0,.3);
++  box-shadow: 0 1px 2px rgba(0,0,0,.3), inset 0 0 0 1px rgba(53,208,189,.12);
+ }
+
+ /* ─── Tables ──────────────────────────────────── */
+ .table-wrap {
+   overflow-x: auto;
+   border-radius: var(--radius);
++  scrollbar-gutter: stable;
+ }
+ table {
+   width: 100%;
+@@ -470,7 +679,7 @@ thead th {
+   text-transform: uppercase;
+   letter-spacing: .04em;
+   color: var(--text-muted);
+-  background: var(--surface-2);
++  background: rgba(12, 35, 47, .9);
+   border-bottom: 1px solid var(--border);
+   white-space: nowrap;
+ }
+@@ -481,7 +690,7 @@ tbody td {
+ }
+ tbody tr:last-child td { border-bottom: none; }
+ tbody tr { transition: background .1s; }
+-tbody tr:hover td { background: var(--surface-2); }
++tbody tr:hover td { background: rgba(53,208,189,.055); }
+ .empty-row td {
+   text-align: center;
+   color: var(--text-dim);
+@@ -489,17 +698,298 @@ tbody tr:hover td { background: var(--surface-2); }
+   font-style: italic;
+ }
+
++.account-list-wrap {
++  width: 100%;
++  overflow-x: hidden;
++}
++.account-list {
++  display: flex;
++  flex-direction: column;
++  width: 100%;
++  min-width: 0;
++}
++.account-list-head,
++.account-row {
++  display: grid;
++  grid-template-columns: 38px minmax(220px, 1.45fr) minmax(150px, .9fr) minmax(230px, 1.15fr) minmax(122px, .55fr);
++  align-items: center;
++  gap: 12px;
++  min-width: 0;
++}
++.account-list-head {
++  padding: 10px 18px;
++  border-bottom: 1px solid var(--border);
++  color: var(--text-dim);
++  font-size: 12px;
++  font-weight: 600;
++  background: rgba(5, 17, 24, .42);
++}
++.account-head-actions { text-align: right; }
++.account-row {
++  padding: 12px 18px;
++  border-bottom: 1px solid var(--border);
++  background: rgba(13, 27, 36, .72);
++  transition: background .14s ease, border-color .14s ease, box-shadow .14s ease, transform .14s ease;
++}
++.account-row:hover {
++  background: rgba(19, 48, 63, .76);
++  border-color: var(--border-strong);
++  box-shadow: inset 2px 0 0 rgba(53,208,189,.5);
++}
++.account-row > * { min-width: 0; }
++.account-select-cell,
++.account-select-head {
++  display: flex;
++  align-items: center;
++  justify-content: center;
++}
++.account-cell {
++  display: flex;
++  align-items: center;
++  gap: 8px;
++  min-width: 0;
++}
++.account-cell .detail-toggle {
++  flex: 0 0 auto;
++  margin-right: 0;
++}
++.account-cell > div { min-width: 0; }
++.account-main {
++  overflow: hidden;
++  text-overflow: ellipsis;
++  white-space: nowrap;
++  color: var(--text);
++  font-weight: 600;
++}
++.account-meta {
++  display: flex;
++  align-items: center;
++  gap: 6px;
++  min-width: 0;
++  margin-top: 2px;
++  color: var(--text-dim);
++  font-size: 11px;
++  font-family: var(--mono);
++}
++.account-meta code { font-size: 10px; padding: 1px 5px; }
++.account-state,
++.account-snapshot,
++.account-row-actions {
++  min-width: 0;
++}
++.status-stack {
++  display: flex;
++  flex-wrap: wrap;
++  align-items: center;
++  gap: 5px;
++}
++.cooldown-chip {
++  display: inline-flex;
++  align-items: center;
++  gap: 4px;
++  max-width: 142px;
++  padding: 2px 8px;
++  border-radius: 999px;
++  border: 1px solid rgba(246,185,77,.28);
++  background: var(--warn-soft);
++  color: var(--warn);
++  font-size: 10.5px;
++  font-family: var(--mono);
++}
++.cooldown-chip span {
++  overflow: hidden;
++  text-overflow: ellipsis;
++  white-space: nowrap;
++}
++.cooldown-list {
++  display: flex;
++  flex-wrap: wrap;
++  gap: 6px;
++  margin-top: 8px;
++}
++.account-snapshot {
++  display: flex;
++  align-items: center;
++  gap: 10px;
++  flex-wrap: wrap;
++}
++.account-quota-summary {
++  display: flex;
++  align-items: center;
++  gap: 6px;
++  flex-wrap: wrap;
++  min-width: 0;
++}
++.quota-chip {
++  display: inline-flex;
++  align-items: center;
++  gap: 5px;
++  max-width: 92px;
++  padding: 3px 8px;
++  border: 1px solid var(--border);
++  border-radius: 999px;
++  background: rgba(5, 17, 24, .54);
++  color: var(--text-muted);
++  font-size: 11px;
++  white-space: nowrap;
++}
++.quota-chip strong {
++  color: var(--success);
++  font-variant-numeric: tabular-nums;
++}
++.quota-chip.warn { background: var(--warn-soft); border-color: rgba(246,185,77,.26); }
++.quota-chip.warn strong { color: var(--warn, #f59e0b); }
++.quota-chip.error { background: var(--error-soft); border-color: rgba(255,105,120,.28); }
++.quota-chip.error strong { color: var(--error); }
++.account-model-summary .btn { min-width: 88px; }
++.account-row-actions {
++  display: flex;
++  align-items: center;
++  gap: 6px;
++  flex-wrap: wrap;
++  justify-content: flex-end;
++}
++.account-row-actions .btn { min-width: 58px; padding-inline: 10px; }
++.account-toolbar {
++  display: flex;
++  align-items: center;
++  gap: 10px;
++  flex-wrap: wrap;
++  padding: 12px 14px;
++  background: rgba(5, 17, 24, .36);
++  border-bottom: 1px solid var(--border);
++}
++.account-search {
++  position: relative;
++  flex: 1 1 280px;
++  min-width: 220px;
++}
++.account-search svg {
++  position: absolute;
++  left: 12px;
++  top: 50%;
++  width: 15px;
++  height: 15px;
++  color: var(--text-dim);
++  transform: translateY(-50%);
++  pointer-events: none;
++}
++.account-search .input {
++  padding-left: 36px;
++}
++.account-filter-select {
++  width: auto;
++  min-width: 126px;
++}
++.account-filter-count {
++  color: var(--text-dim);
++  font-size: 12px;
++  margin-left: auto;
++  white-space: nowrap;
++}
++.account-detail-row {
++  display: none;
++  border-bottom: 1px solid var(--border);
++  background: #071219;
++}
++.account-empty {
++  display: grid;
++  justify-items: center;
++  gap: 10px;
++  padding: 38px 18px 42px;
++  color: var(--text-muted);
++  text-align: center;
++  background:
++    linear-gradient(180deg, rgba(53,208,189,.045), rgba(255,255,255,0)),
++    rgba(5, 17, 24, .24);
++}
++.account-empty-icon {
++  width: 44px;
++  height: 44px;
++  display: grid;
++  place-items: center;
++  border-radius: 14px;
++  color: var(--amber);
++  border: 1px solid rgba(248,207,106,.20);
++  background: var(--amber-soft);
++  box-shadow: 0 0 28px rgba(248,207,106,.08);
++}
++.account-empty-icon svg {
++  width: 22px;
++  height: 22px;
++}
++.account-empty-title {
++  color: var(--text);
++  font-size: 14px;
++  font-weight: 650;
++}
++.account-empty-sub {
++  max-width: 420px;
++  font-size: 12px;
++  line-height: 1.6;
++}
++.account-detail-actions {
++  display: flex;
++  align-items: center;
++  gap: 8px;
++  flex-wrap: wrap;
++  margin-bottom: 14px;
++}
++.key-chip {
++  cursor: pointer;
++  max-width: 84px;
++  overflow: hidden;
++  text-overflow: ellipsis;
++  white-space: nowrap;
++}
++.batch-bar {
++  display: flex;
++  align-items: center;
++  gap: 9px;
++  flex-wrap: wrap;
++  padding: 10px 14px;
++  background:
++    linear-gradient(180deg, rgba(255,255,255,.055), rgba(255,255,255,0)),
++    rgba(8, 24, 32, .92);
++  border: 1px solid var(--border-strong);
++  border-radius: 999px;
++  position: fixed;
++  left: 50%;
++  bottom: 22px;
++  top: auto;
++  z-index: 70;
++  max-width: calc(100vw - 40px);
++  opacity: 0;
++  pointer-events: none;
++  transform: translateX(-50%) translateY(18px) scale(.98);
++  backdrop-filter: blur(18px);
++  box-shadow: var(--shadow-lg), 0 0 0 1px rgba(53,208,189,.08), 0 18px 48px rgba(53,208,189,.09);
++  transition: opacity .2s ease, transform .2s cubic-bezier(.2,.9,.3,1), box-shadow .2s ease;
++}
++.batch-bar.active {
++  opacity: 1;
++  pointer-events: auto;
++  transform: translateX(-50%) translateY(0) scale(1);
++}
++.batch-count {
++  color: var(--text-muted);
++  font-size: 12px;
++  min-width: 72px;
++}
++.batch-spacer { flex: 1 1 120px; }
++
+ /* ─── Badges ──────────────────────────────────── */
+ .badge {
+   display: inline-flex;
+   align-items: center;
+   gap: 4px;
+-  padding: 2px 8px;
++  padding: 2px 9px;
+   border-radius: 999px;
+   font-size: 11px;
+   font-weight: 600;
+   line-height: 1.5;
+-  border: 1px solid transparent;
++  border: 1px solid rgba(255,255,255,.04);
++  background: rgba(5, 17, 24, .42);
+ }
+ .badge::before {
+   content: '';
+@@ -507,13 +997,21 @@ tbody tr:hover td { background: var(--surface-2); }
+   border-radius: 50%;
+   background: currentColor;
+ }
++.badge.active::before,
++.badge.running::before,
++.badge.success::before,
++.badge.info::before {
++  animation: statusPulse 1.9s ease-in-out infinite;
++}
+ .badge.active, .badge.running, .badge.success {
+   background: var(--success-soft);
+   color: var(--success);
++  border-color: rgba(69,212,131,.24);
+ }
+ .badge.error, .badge.stopped {
+   background: var(--error-soft);
+   color: var(--error);
++  border-color: rgba(255,105,120,.25);
+ }
+ .badge.disabled, .badge.muted {
+   background: var(--surface-3);
+@@ -522,10 +1020,12 @@ tbody tr:hover td { background: var(--surface-2); }
+ .badge.warn {
+   background: var(--warn-soft);
+   color: var(--warn);
++  border-color: rgba(246,185,77,.25);
+ }
+ .badge.info, .badge.pro {
+   background: var(--info-soft);
+   color: var(--info);
++  border-color: rgba(69,185,255,.25);
+ }
+ .badge.no-dot::before { display: none; }
+
+@@ -534,16 +1034,16 @@ tbody tr:hover td { background: var(--surface-2); }
+   display: inline-flex;
+   align-items: center;
+   padding: 2px 10px;
+-  border-radius: 5px;
++  border-radius: 999px;
+   font-size: 11px;
+   font-weight: 700;
+   text-transform: uppercase;
+   letter-spacing: .04em;
+ }
+-.tier.pro { background: linear-gradient(135deg, #6366f1, #8b5cf6); color: #fff; }
+-.tier.free { background: var(--info-soft); color: var(--info); }
+-.tier.expired { background: var(--error-soft); color: var(--error); }
+-.tier.unknown { background: var(--surface-3); color: var(--text-muted); }
++.tier.pro { background: linear-gradient(135deg, var(--accent), var(--teal)); color: #fff; box-shadow: 0 0 16px rgba(53,208,189,.16); }
++.tier.free { background: var(--info-soft); color: var(--info); border: 1px solid rgba(69,185,255,.22); }
++.tier.expired { background: var(--error-soft); color: var(--error); border: 1px solid rgba(255,105,120,.22); }
++.tier.unknown { background: var(--surface-3); color: var(--text-muted); border: 1px solid var(--border); }
+
+ /* ─── LS Pool Cards ───────────────────────────── */
+ .ls-pool {
+@@ -553,11 +1053,13 @@ tbody tr:hover td { background: var(--surface-2); }
+ }
+ .ls-inst {
+   padding: 14px 16px;
+-  background: var(--bg-elev);
++  background: linear-gradient(180deg, rgba(53,208,189,.045), rgba(255,255,255,0)), var(--bg-elev);
+   border: 1px solid var(--border);
+   border-radius: var(--radius-sm);
+   font-size: 12px;
++  transition: border-color .16s ease, transform .16s ease, box-shadow .16s ease;
+ }
++.ls-inst:hover { border-color: var(--border-strong); transform: translateY(-1px); box-shadow: var(--shadow-glow); }
+ .ls-inst .ls-key {
+   font-weight: 600;
+   color: var(--text);
+@@ -572,6 +1074,7 @@ tbody tr:hover td { background: var(--surface-2); }
+   border-radius: 50%;
+   background: var(--success);
+   box-shadow: 0 0 8px var(--success);
++  animation: statusPulse 1.9s ease-in-out infinite;
+ }
+ .ls-inst .ls-dot.pending { background: var(--warn); box-shadow: 0 0 8px var(--warn); }
+ .ls-inst .ls-meta { color: var(--text-dim); font-family: var(--mono); font-size: 11px; margin-top: 2px; }
+@@ -588,23 +1091,25 @@ tbody tr:hover td { background: var(--surface-2); }
+   align-items: center;
+   gap: 6px;
+   padding: 5px 11px;
+-  border-radius: 6px;
++  border-radius: 999px;
+   font-size: 12px;
+   border: 1px solid var(--border);
+-  background: var(--bg-elev);
++  background: rgba(3, 11, 15, .58);
+   color: var(--text-muted);
+   cursor: pointer;
+-  transition: all .15s;
++  transition: background .15s ease, border-color .15s ease, color .15s ease, transform .15s ease, box-shadow .15s ease;
+   font-weight: 500;
+ }
+ .model-chip:hover {
+-  border-color: var(--accent);
++  border-color: var(--border-hot);
+   color: var(--text);
++  transform: translateY(-1px);
+ }
+ .model-chip.selected {
+-  background: var(--accent-soft);
+-  border-color: var(--accent);
+-  color: var(--accent);
++  background: linear-gradient(135deg, rgba(91,124,250,.18), rgba(53,208,189,.12));
++  border-color: var(--border-hot);
++  color: var(--text);
++  box-shadow: 0 0 0 1px rgba(53,208,189,.08);
+ }
+ .model-chip .remove {
+   color: var(--error);
+@@ -667,10 +1172,11 @@ tbody tr:hover td { background: var(--surface-2); }
+ /* ─── Chart ───────────────────────────────────── */
+ .chart {
+   padding: 20px;
+-  background: var(--surface);
++  background: linear-gradient(180deg, rgba(255,255,255,.025), rgba(255,255,255,0)), var(--surface);
+   border: 1px solid var(--border);
+   border-radius: var(--radius);
+   margin-bottom: 20px;
++  box-shadow: var(--shadow);
+ }
+ .chart h3 { font-size: 14px; font-weight: 600; margin-bottom: 16px; }
+ .bars {
+@@ -691,7 +1197,7 @@ tbody tr:hover td { background: var(--surface-2); }
+ .bar {
+   width: 100%;
+   min-width: 6px;
+-  background: linear-gradient(to top, var(--accent), var(--accent-hover));
++  background: linear-gradient(to top, var(--teal), var(--accent-hover));
+   border-radius: 3px 3px 0 0;
+   transition: height .4s cubic-bezier(.4,0,.2,1);
+ }
+@@ -719,9 +1225,9 @@ tbody tr:hover td { background: var(--surface-2); }
+ }
+ .toast {
+   padding: 12px 18px;
+-  border-radius: var(--radius-sm);
++  border-radius: var(--radius);
+   font-size: 13px;
+-  background: var(--surface);
++  background: linear-gradient(180deg, rgba(255,255,255,.04), rgba(255,255,255,0)), rgba(9, 24, 32, .94);
+   border: 1px solid var(--border);
+   box-shadow: var(--shadow-lg);
+   animation: slideIn .25s ease;
+@@ -731,9 +1237,10 @@ tbody tr:hover td { background: var(--surface-2); }
+   align-items: center;
+   gap: 10px;
+ }
+-.toast.success { border-left: 3px solid var(--success); }
+-.toast.error { border-left: 3px solid var(--error); }
+-.toast.info { border-left: 3px solid var(--info); }
++.toast.success { border-left: 3px solid var(--success); box-shadow: var(--shadow-lg), 0 0 26px rgba(69,212,131,.10); }
++.toast.error { border-left: 3px solid var(--error); box-shadow: var(--shadow-lg), 0 0 26px rgba(255,105,120,.10); }
++.toast.info { border-left: 3px solid var(--info); box-shadow: var(--shadow-lg), 0 0 26px rgba(69,185,255,.10); }
++.toast.warn { border-left: 3px solid var(--warn); box-shadow: var(--shadow-lg), 0 0 26px rgba(246,185,77,.10); }
+ @keyframes slideIn {
+   from { opacity: 0; transform: translateX(20px); }
+   to { opacity: 1; transform: translateX(0); }
+@@ -743,8 +1250,8 @@ tbody tr:hover td { background: var(--surface-2); }
+ .modal-overlay {
+   position: fixed;
+   inset: 0;
+-  background: rgba(0,0,0,.7);
+-  backdrop-filter: blur(4px);
++  background: rgba(1, 8, 12, .74);
++  backdrop-filter: blur(8px);
+   display: flex;
+   align-items: center;
+   justify-content: center;
+@@ -752,8 +1259,10 @@ tbody tr:hover td { background: var(--surface-2); }
+   animation: fadeIn .15s ease;
+ }
+ .modal {
+-  background: var(--surface);
+-  border: 1px solid var(--border);
++  background:
++    linear-gradient(180deg, rgba(53,208,189,.06), rgba(255,255,255,0) 120px),
++    var(--surface);
++  border: 1px solid var(--border-strong);
+   border-radius: var(--radius-lg);
+   width: 90%;
+   max-width: 440px;
+@@ -773,7 +1282,7 @@ tbody tr:hover td { background: var(--surface-2); }
+ .modal-body { padding: 12px 24px 20px; }
+ .modal-footer {
+   padding: 14px 24px;
+-  background: var(--surface-2);
++  background: rgba(5, 17, 24, .48);
+   display: flex;
+   justify-content: flex-end;
+   gap: 8px;
+@@ -784,15 +1293,15 @@ tbody tr:hover td { background: var(--surface-2); }
+ .login-overlay {
+   position: fixed;
+   inset: 0;
+-  background: radial-gradient(ellipse at center, rgba(99,102,241,.08) 0%, var(--bg) 70%);
++  background: radial-gradient(ellipse at center, rgba(53,208,189,.10) 0%, var(--bg) 70%);
+   display: flex;
+   align-items: center;
+   justify-content: center;
+   z-index: 200;
+ }
+ .login-box {
+-  background: var(--surface);
+-  border: 1px solid var(--border);
++  background: linear-gradient(180deg, rgba(255,255,255,.035), rgba(255,255,255,0)), var(--surface);
++  border: 1px solid var(--border-strong);
+   border-radius: var(--radius-lg);
+   padding: 36px 32px;
+   width: 380px;
+@@ -802,10 +1311,10 @@ tbody tr:hover td { background: var(--surface-2); }
+   width: 56px; height: 56px;
+   margin: 0 auto 18px;
+   border-radius: 14px;
+-  background: linear-gradient(135deg, var(--accent) 0%, #8b5cf6 100%);
++  background: linear-gradient(135deg, var(--teal) 0%, var(--accent) 100%);
+   display: flex; align-items: center; justify-content: center;
+   font-weight: 800; font-size: 22px; color: #fff;
+-  box-shadow: 0 10px 30px rgba(99,102,241,.35);
++  box-shadow: 0 10px 30px rgba(53,208,189,.28);
+ }
+ .login-box h3 { text-align: center; font-size: 18px; margin-bottom: 8px; }
+ .login-box p { text-align: center; font-size: 13px; color: var(--text-muted); margin-bottom: 22px; }
+@@ -824,6 +1333,11 @@ tbody tr:hover td { background: var(--surface-2); }
+ }
+ @keyframes spin { to { transform: rotate(360deg); } }
+
++@keyframes statusPulse {
++  0%, 100% { opacity: .72; box-shadow: 0 0 0 0 currentColor; }
++  50% { opacity: 1; box-shadow: 0 0 0 4px rgba(53,208,189,0); }
++}
++
+ /* ─── Capability Markers ──────────────────────── */
+ .cap-list { display: inline-flex; flex-wrap: wrap; gap: 4px; }
+ .cap-item {
+@@ -854,21 +1368,16 @@ tbody tr:hover td { background: var(--surface-2); }
+ }
+ .expand-chevron:hover, .detail-toggle:hover {
+   color: var(--text);
+-  background: var(--surface-2);
+-  border-color: var(--border);
++  background: rgba(53,208,189,.08);
++  border-color: var(--border-strong);
+ }
+ .expand-chevron.open, .detail-toggle.open {
+-  color: var(--accent);
++  color: var(--teal);
+   transform: rotate(90deg);
+ }
+-.account-detail-row > td {
+-  padding: 0 !important;
+-  background: #0d0d10 !important;
+-  border-bottom: 1px solid var(--border) !important;
+-}
+ .account-detail-wrap {
+   padding: 18px 24px;
+-  background: linear-gradient(180deg, rgba(99,102,241,.04), transparent 80%);
++  background: linear-gradient(180deg, rgba(53,208,189,.06), transparent 80%);
+ }
+ .detail-grid, .account-detail-grid {
+   display: grid;
+@@ -876,10 +1385,11 @@ tbody tr:hover td { background: var(--surface-2); }
+   gap: 14px;
+ }
+ .detail-card, .account-detail-card {
+-  background: var(--surface);
++  background: rgba(13, 27, 36, .78);
+   border: 1px solid var(--border);
+   border-radius: var(--radius);
+   padding: 14px 16px;
++  box-shadow: 0 1px 0 rgba(255,255,255,.025) inset;
+ }
+ .detail-card.full, .account-detail-card.full, .account-detail-models { grid-column: 1 / -1; }
+ .detail-card-head, .account-detail-title {
+@@ -897,8 +1407,9 @@ tbody tr:hover td { background: var(--surface-2); }
+   width: 6px;
+   height: 6px;
+   border-radius: 50%;
+-  background: var(--accent);
+-  box-shadow: 0 0 6px var(--accent);
++  background: var(--teal);
++  box-shadow: 0 0 6px var(--teal);
++  animation: statusPulse 1.9s ease-in-out infinite;
+ }
+ .detail-kv, .account-detail-kv {
+   display: grid;
+@@ -928,7 +1439,7 @@ tbody tr:hover td { background: var(--surface-2); }
+ .detail-bar .bar-track, .account-detail-bar {
+   height: 7px;
+   border-radius: 4px;
+-  background: var(--surface-2);
++  background: rgba(3, 11, 15, .58);
+   overflow: hidden;
+   border: 1px solid var(--border);
+ }
+@@ -993,7 +1504,7 @@ tbody tr:hover td { background: var(--surface-2); }
+   padding: 6px 9px;
+   border-radius: 6px;
+   border: 1px solid var(--border);
+-  background: var(--bg-elev);
++  background: rgba(3, 11, 15, .58);
+   min-width: 0;
+ }
+ .account-detail-model-chip.blocked {
+@@ -1005,6 +1516,7 @@ tbody tr:hover td { background: var(--surface-2); }
+   height: 7px;
+   border-radius: 50%;
+   background: var(--success);
++  animation: statusPulse 1.9s ease-in-out infinite;
+ }
+ .account-detail-model-chip.blocked .chip-dot { background: var(--error); }
+ .account-detail-model-chip .chip-name {
+@@ -1016,9 +1528,9 @@ tbody tr:hover td { background: var(--surface-2); }
+ }
+ .account-detail-model-chip .chip-cost {
+   font-size: 10px;
+-  color: var(--accent);
+-  background: var(--accent-soft);
+-  border: 1px solid rgba(99,102,241,.25);
++  color: var(--teal);
++  background: var(--teal-soft);
++  border: 1px solid rgba(53,208,189,.25);
+   border-radius: 999px;
+   padding: 1px 6px;
+ }
+@@ -1177,14 +1689,130 @@ tbody tr:hover td { background: var(--surface-2); }
+ .break-all { word-break: break-all; }
+
+ /* ─── Responsive ──────────────────────────────── */
+-@media (max-width: 900px) {
++@media (max-width: 1100px) {
+   .sidebar { width: 60px; }
+   .sidebar .brand-name, .sidebar .brand-sub, .sidebar nav a span, .sidebar .footer .ver, .sidebar .nav-group-label { display: none; }
+   .sidebar .brand { justify-content: center; padding: 20px 0; }
+   .sidebar nav a { justify-content: center; padding: 10px; }
+-  .main { margin-left: 60px; padding: 20px 16px; }
++  .main { margin-left: 60px; width: calc(100% - 60px); padding: 20px 16px; }
+   .detail-grid, .chart-grid, .chart-pie-body { grid-template-columns: 1fr; }
+   .chart-pie-body canvas { margin: 0 auto; }
++  .account-list-head { display: none; }
++  .account-row {
++    grid-template-columns: 34px minmax(0, 1fr) minmax(96px, auto);
++    grid-template-areas:
++      "select account actions"
++      "select state actions"
++      "select snapshot snapshot";
++    align-items: start;
++    gap: 8px 12px;
++  }
++  .account-select-cell { grid-area: select; padding-top: 2px; }
++  .account-primary { grid-area: account; }
++  .account-state { grid-area: state; }
++  .account-snapshot { grid-area: snapshot; }
++  .account-row-actions { grid-area: actions; }
++  .account-detail-grid { grid-template-columns: 1fr; }
++}
++@media (max-width: 640px) {
++  .section-header { align-items: flex-start; }
++  .page-header { gap: 12px; }
++  .batch-bar {
++    position: fixed;
++    left: 12px;
++    right: 12px;
++    bottom: 12px;
++    top: auto;
++    max-width: none;
++    max-height: 46vh;
++    overflow-y: auto;
++    align-items: flex-start;
++    border-radius: 16px;
++    transform: translateY(18px) scale(.98);
++  }
++  .batch-bar.active {
++    transform: translateY(0) scale(1);
++  }
++  .batch-bar .btn {
++    flex: 1 1 96px;
++  }
++  .batch-count {
++    flex: 1 1 100%;
++  }
++  .account-toolbar {
++    align-items: stretch;
++  }
++  .account-search,
++  .account-filter-select,
++  .account-toolbar .btn,
++  .account-filter-count {
++    flex: 1 1 100%;
++    width: 100%;
++  }
++  .account-filter-count {
++    margin-left: 0;
++  }
++  .batch-spacer { display: none; }
++  .account-row {
++    grid-template-columns: 30px minmax(0, 1fr);
++    grid-template-areas:
++      "select account"
++      "select state"
++      "select snapshot"
++      "actions actions";
++    padding: 12px 14px;
++  }
++  .account-row-actions { justify-content: flex-start; }
++  .account-main { max-width: 100%; }
++  .account-detail-wrap { padding: 14px; }
++  .account-snapshot,
++  .account-quota-summary,
++  .account-model-summary {
++    width: 100%;
++  }
++  .account-model-summary .btn {
++    width: 100%;
++    min-width: 0;
++    justify-content: center;
++  }
++  .quota-chip {
++    flex: 1 1 72px;
++    max-width: 100%;
++  }
++  .account-detail-actions .btn {
++    flex: 1 1 86px;
++  }
++  .account-detail-kv {
++    grid-template-columns: 78px minmax(0, 1fr);
++  }
++  .account-detail-kv strong,
++  .account-detail-kv code {
++    min-width: 0;
++    overflow: hidden;
++    text-overflow: ellipsis;
++  }
++  .wl-card-actions .btn {
++    flex: 1 1 128px;
++  }
++  .wl-card-status,
++  .wl-auto-add-option {
++    margin-left: 0;
++    flex: 1 1 100%;
++  }
++  .wl-batch-chip {
++    max-width: 100%;
++  }
++}
++
++@media (prefers-reduced-motion: reduce) {
++  *,
++  *::before,
++  *::after {
++    animation-duration: .001ms !important;
++    animation-iteration-count: 1 !important;
++    scroll-behavior: auto !important;
++    transition-duration: .001ms !important;
++  }
+ }
+ </style>
+ </head>
+@@ -1192,8 +1820,13 @@ tbody tr:hover td { background: var(--surface-2); }
+
+ <!-- ════════ Sidebar ════════ -->
+ <aside class="sidebar">
+-  <div class="brand">
+-    <div class="brand-logo">W</div>
++    <div class="brand">
++    <div class="brand-logo" aria-hidden="true">
++      <svg viewBox="0 0 32 32" fill="none">
++        <path d="M4 18.5c3.6-3 6.6-3 10.2 0s6.6 3 10.2 0c1.2-1 2.4-1.7 3.6-2" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"/>
++        <path d="M4 12.5c3.6-3 6.6-3 10.2 0s6.6 3 10.2 0c1.2-1 2.4-1.7 3.6-2" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" opacity=".58"/>
++      </svg>
++    </div>
+     <div>
+       <div class="brand-name">WindsurfPoolAPI</div>
+       <div class="brand-sub">管理控制台</div>
+@@ -1285,25 +1918,51 @@ tbody tr:hover td { background: var(--surface-2); }
+     <div class="page-header">
+       <div>
+         <h1 class="page-title">登录取号</h1>
+-        <div class="page-subtitle">使用账号密码登录 Windsurf 获取 API Key 并加入账号池</div>
++        <div class="page-subtitle">使用账号密码登录 Windsurf 获取本地可用凭据并加入账号池</div>
+       </div>
+     </div>
+     <div class="section">
+       <div class="section-header">
+         <div>
+           <div class="section-title">账号凭据</div>
+-          <div class="section-desc">每次登录使用随机浏览器指纹</div>
++          <div class="section-desc">支持邮箱密码，也可直接粘贴单条或多行卡密，系统会自动识别并按行加入账号池</div>
+         </div>
+       </div>
+       <div class="section-body">
++        <div class="login-card-import">
++          <div class="login-card-import-head">
++            <div>
++              <div class="login-card-import-title">整条卡密 / 批量卡密</div>
++              <div class="login-card-import-desc">每行一条：邮箱----密码----session token。多行会顺序登录；token 只保留在这里，不会在本页登录时使用。</div>
++            </div>
++            <span class="badge info no-dot" id="wl-card-mode">自动识别</span>
++          </div>
++          <textarea id="wl-card" class="textarea wl-card-textarea" rows="5" placeholder="your-email1@example.com----你的密码1----session token&#10;your-email2@example.com----你的密码2----session token" autocomplete="off" spellcheck="false" autocapitalize="off" oninput="App.updateWindsurfCardStatus()"></textarea>
++          <div id="wl-batch-preview" class="wl-batch-preview hidden"></div>
++          <div class="field-row-actions wl-card-actions">
++            <button class="btn btn-outline btn-sm" onclick="App.applyWindsurfCard()">
++              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"><path d="M12 5v14"/><path d="M5 12h14"/></svg>
++              填入首条
++            </button>
++            <button class="btn btn-success btn-sm" onclick="App.windsurfBatchLogin()" id="wl-batch-btn">
++              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
++              批量登录入池
++            </button>
++            <button class="btn btn-ghost btn-sm" onclick="App.clearWindsurfCard()">
++              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"><path d="M3 6h18"/><path d="M8 6V4h8v2"/><path d="M6 6l1 14h10l1-14"/><path d="M10 11v5"/><path d="M14 11v5"/></svg>
++              清空卡密
++            </button>
++            <span id="wl-card-status" class="field-hint wl-card-status">等待粘贴整条卡密</span>
++          </div>
++        </div>
+         <div class="field-row">
+           <div class="field">
+             <label class="field-label">邮箱</label>
+-            <input id="wl-email" class="input" placeholder="your-email@example.com" autocomplete="off">
++            <input id="wl-email" name="wl-login-email" class="input" placeholder="your-email@example.com" autocomplete="off" oninput="App.parseWindsurfCard('wl-email')">
+           </div>
+           <div class="field">
+             <label class="field-label">密码</label>
+-            <input id="wl-password" class="input" type="password" placeholder="••••••••" autocomplete="off" onkeydown="if(event.key==='Enter')App.windsurfLogin()">
++            <input id="wl-password" name="wl-login-password-new" class="input" type="password" placeholder="••••••••" autocomplete="new-password" data-lpignore="true" data-1p-ignore="true" onkeydown="if(event.key==='Enter')App.windsurfLogin()">
+           </div>
+         </div>
+         <div class="field-row-actions">
+@@ -1311,8 +1970,8 @@ tbody tr:hover td { background: var(--surface-2); }
+             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/><polyline points="10 17 15 12 10 7"/><line x1="15" y1="12" x2="3" y2="12"/></svg>
+             登录
+           </button>
+-          <label class="checkbox" style="margin-left:auto">
+-            <input type="checkbox" id="wl-auto-add" checked>
++          <label class="checkbox wl-auto-add-option">
++            <input type="checkbox" id="wl-auto-add" checked onchange="App.updateWindsurfCardStatus()">
+             <span class="box"></span>
+             <span>登录成功自动加入账号池</span>
+           </label>
+@@ -1385,6 +2044,10 @@ tbody tr:hover td { background: var(--surface-2); }
+         <div class="page-subtitle">维护账号池，探测各账号订阅层级与可用模型</div>
+       </div>
+       <div class="btn-group">
++        <button class="btn btn-outline" onclick="App.recoverAccounts()">
++          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"><path d="M3 12a9 9 0 0 1 9-9 9 9 0 0 1 7.5 4"/><path d="M21 3v6h-6"/><path d="M21 12a9 9 0 0 1-9 9 9 9 0 0 1-7.5-4"/><path d="M3 21v-6h6"/></svg>
++          安全恢复
++        </button>
+         <button class="btn btn-outline" onclick="App.refreshAllCredits()">
+           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"><path d="M21 12a9 9 0 0 1-9 9 9 9 0 0 1-6.24-2.52L3 21"/><path d="M3 12a9 9 0 0 1 9-9 9 9 0 0 1 6.24 2.52L21 3"/><path d="M21 3v6h-6"/><path d="M3 21v-6h6"/></svg>
+           刷新余额
+@@ -1433,24 +2096,56 @@ tbody tr:hover td { background: var(--surface-2); }
+       <div class="section-header">
+         <div>
+           <div class="section-title">账号列表</div>
+-          <div class="section-desc">勾选账号后可批量停用/启用</div>
++          <div class="section-desc">操作列固定在右侧；勾选账号后可批量停用、启用或安全恢复</div>
++        </div>
++        <button class="btn btn-ghost btn-xs" onclick="App.recoverAccounts()">恢复可用账号</button>
++      </div>
++      <div class="account-toolbar" role="search">
++        <div class="account-search">
++          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.3-4.3"/></svg>
++          <input id="account-search" class="input" placeholder="搜索邮箱、ID、状态、模型或额度..." autocomplete="off" oninput="App.filterAccounts()">
+         </div>
++        <select id="account-status-filter" class="select account-filter-select" onchange="App.filterAccounts()">
++          <option value="">全部状态</option>
++          <option value="active">Active</option>
++          <option value="error">Error</option>
++          <option value="expired">Expired</option>
++          <option value="disabled">Disabled</option>
++          <option value="rateLimited">限流中</option>
++          <option value="recoverable">可恢复</option>
++        </select>
++        <select id="account-tier-filter" class="select account-filter-select" onchange="App.filterAccounts()">
++          <option value="">全部套餐</option>
++          <option value="pro">PRO</option>
++          <option value="free">FREE</option>
++          <option value="expired">已过期</option>
++          <option value="unknown">未知</option>
++        </select>
++        <button class="btn btn-ghost btn-sm" onclick="App.clearAccountFilters()">清除</button>
++        <span id="account-filter-count" class="account-filter-count">0 个账号</span>
+       </div>
+-      <div id="batch-bar" style="display:none;padding:8px 12px;background:var(--surface-2);border:1px solid var(--border);border-radius:6px;margin-bottom:8px;align-items:center;gap:8px">
+-        <span id="batch-count" style="font-size:13px;color:var(--text-muted)">已选 0 个</span>
++      <div id="batch-bar" class="batch-bar">
++        <span id="batch-count" class="batch-count">已选 0 个</span>
+         <button class="btn btn-primary btn-xs" onclick="App.batchSetStatus('active')">批量启用</button>
+         <button class="btn btn-outline btn-xs" onclick="App.batchSetStatus('disabled')">批量停用</button>
+-        <span style="flex:1"></span>
++        <button class="btn btn-outline btn-xs" onclick="App.recoverAccounts(true)">安全恢复</button>
++        <span class="batch-spacer"></span>
+         <button class="btn btn-ghost btn-xs" onclick="App.selectAllAccounts()">全选</button>
+         <button class="btn btn-ghost btn-xs" onclick="App.invertSelectAccounts()">反选</button>
+         <button class="btn btn-ghost btn-xs" onclick="App.clearSelectAccounts()">取消</button>
+       </div>
+       <div class="section-body tight">
+-        <div class="table-wrap">
+-          <table id="accounts-table">
+-            <thead><tr><th style="width:32px"><input type="checkbox" id="acct-select-all" onchange="App.onSelectAllToggle(this.checked)"></th><th>ID</th><th>标签</th><th>层级</th><th>RPM</th><th>余额</th><th>可用模型</th><th>状态</th><th>错误</th><th>最后使用</th><th>Key</th><th>操作</th></tr></thead>
+-            <tbody></tbody>
+-          </table>
++        <div class="account-list-wrap">
++          <div id="accounts-table" class="account-list" role="table" aria-label="账号列表">
++            <div class="account-list-head" role="row">
++              <div class="account-select-head"><input type="checkbox" id="acct-select-all" onchange="App.onSelectAllToggle(this.checked)"></div>
++              <div>账号</div>
++              <div>状态</div>
++              <div>额度 / 模型</div>
++              <div class="account-head-actions">操作</div>
++            </div>
++            <div class="account-list-body"></div>
++          </div>
+         </div>
+       </div>
+     </div>
+@@ -1847,6 +2542,9 @@ const App = {
+   statsMetric: 'requests',
+   statsData: null,
+   accountModelCatalog: {},
++  accountKeyById: {},
++  accountRows: [],
++  accountOverview: null,
+
+   // Register a polling loader. Guarantees exactly one timer per key even if
+   // the loader is invoked repeatedly, and auto-pauses while the tab is
+@@ -1880,6 +2578,39 @@ const App = {
+     this.init();
+   },
+
++  formatCompactNumber(value, { digits = 1 } = {}) {
++    const n = Number(value || 0);
++    if (!Number.isFinite(n)) return '0';
++    const abs = Math.abs(n);
++    const fmt = (divisor, suffix) => {
++      const raw = n / divisor;
++      const fixed = raw.toFixed(digits).replace(/\.0$/, '');
++      return fixed + suffix;
++    };
++    if (abs >= 1_000_000_000) return fmt(1_000_000_000, 'B');
++    if (abs >= 1_000_000) return fmt(1_000_000, 'M');
++    if (abs >= 10_000) return fmt(1_000, 'K');
++    return new Intl.NumberFormat('zh-CN').format(n);
++  },
++
++  renderAccountEmptyState(total) {
++    const filtered = total > 0;
++    return `
++      <div class="account-empty">
++        <div class="account-empty-icon" aria-hidden="true">
++          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2">
++            <path d="M21 15a4 4 0 0 1-4 4H7l-4 3V7a4 4 0 0 1 4-4h10a4 4 0 0 1 4 4z"/>
++            <path d="M8 9h8"/><path d="M8 13h5"/>
++          </svg>
++        </div>
++        <div class="account-empty-title">${filtered ? '没有符合筛选条件的账号' : '账号池还是空的'}</div>
++        <div class="account-empty-sub">${filtered ? '换个关键词或清除筛选条件，列表会立刻恢复。' : '去登录取号页粘贴卡密，或在上方添加 API Key / Auth Token。'}</div>
++        <button class="btn ${filtered ? 'btn-outline' : 'btn-primary'} btn-sm" onclick="${filtered ? 'App.clearAccountFilters()' : "App.navigate('windsurf-login')"}">
++          ${filtered ? '清除筛选' : '去登录取号'}
++        </button>
++      </div>`;
++  },
++
+   navigate(panel) {
+     document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+     document.querySelectorAll('.sidebar nav a').forEach(a => a.classList.remove('active'));
+@@ -2019,35 +2750,35 @@ const App = {
+         <div class="card-header"><div class="card-title">活跃账号</div>
+           <svg class="card-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>
+         </div>
+-        <div class="card-value">${d.accounts?.active || 0}</div>
++        <div class="card-value">${this.formatCompactNumber(d.accounts?.active || 0)}</div>
+         <div class="card-sub">${d.accounts?.total || 0} 个总账号 · ${d.accounts?.error || 0} 异常</div>
+       </div>
+       <div class="card info">
+         <div class="card-header"><div class="card-title">总请求数</div>
+           <svg class="card-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>
+         </div>
+-        <div class="card-value">${d.totalRequests || 0}</div>
++        <div class="card-value">${this.formatCompactNumber(d.totalRequests || 0)}</div>
+         <div class="card-sub">成功率 ${d.successRate || 0}%</div>
+       </div>
+       <div class="card">
+         <div class="card-header"><div class="card-title">运行时间</div>
+           <svg class="card-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+         </div>
+-        <div class="card-value" style="font-size:20px">${uptime}</div>
++        <div class="card-value compact">${uptime}</div>
+         <div class="card-sub">启动于 ${d.startedAt ? new Date(d.startedAt).toLocaleString() : '-'}</div>
+       </div>
+       <div class="card ${ls.running ? 'success' : 'error'}">
+         <div class="card-header"><div class="card-title">Language Server</div>
+           <svg class="card-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"><rect x="2" y="2" width="20" height="8" rx="2"/><rect x="2" y="14" width="20" height="8" rx="2"/><line x1="6" y1="6" x2="6.01" y2="6"/><line x1="6" y1="18" x2="6.01" y2="18"/></svg>
+         </div>
+-        <div class="card-value" style="font-size:20px">${ls.running ? '运行中' : '已停止'}</div>
++        <div class="card-value compact">${ls.running ? '运行中' : '已停止'}</div>
+         <div class="card-sub">${poolCount} 个实例 · 端口 ${ls.port || '-'}</div>
+       </div>
+       <div class="card info">
+         <div class="card-header"><div class="card-title">响应缓存</div>
+           <svg class="card-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/><path d="M3 12c0 1.66 4 3 9 3s9-1.34 9-3"/></svg>
+         </div>
+-        <div class="card-value">${d.cache?.hitRate || '0.0'}%</div>
++        <div class="card-value">${Number(d.cache?.hitRate || 0).toFixed(1)}%</div>
+         <div class="card-sub">${d.cache?.hits || 0} 命中 / ${d.cache?.misses || 0} 未命中 · ${d.cache?.size || 0}/${d.cache?.maxSize || 0} 条</div>
+       </div>
+     `;
+@@ -2083,26 +2814,298 @@ const App = {
+   },
+
+   // ─── Windsurf Login ──────────────────────────
+-  loadWindsurfLogin() { this.renderLoginHistory(); },
++  loadWindsurfLogin() {
++    this.clearWindsurfPasswordField();
++    this.renderLoginHistory();
++    this.updateWindsurfCardStatus();
++  },
+
+-  async windsurfLogin() {
+-    const email = document.getElementById('wl-email').value.trim();
+-    const password = document.getElementById('wl-password').value.trim();
+-    if (!email || !password) return this.toast('请输入邮箱和密码', 'error');
++  clearWindsurfPasswordField() {
++    const passEl = document.getElementById('wl-password');
++    if (passEl) passEl.value = '';
++  },
++
++  _parseWindsurfCardLine(line, lineNo = 1) {
++    const rawLine = String(line || '').trim();
++    if (!rawLine) return null;
++    if (!rawLine.includes('----')) {
++      return { ok: false, line: rawLine, lineNo, reason: '缺少分隔符 ----' };
++    }
++    const parts = rawLine.split(/----/);
++    if (parts.length < 2) {
++      return { ok: false, line: rawLine, lineNo, reason: '格式不完整' };
++    }
++    const email = (parts[0] || '').trim();
++    const password = (parts[1] || '').trim();
++    const token = parts.slice(2).join('----').trim();
++    if (!email.includes('@')) {
++      return { ok: false, line: rawLine, lineNo, reason: '邮箱格式不正确' };
++    }
++    if (!password) {
++      return { ok: false, line: rawLine, lineNo, reason: '缺少密码' };
++    }
++    return { ok: true, email, password, token, line: rawLine, lineNo };
++  },
++
++  _parseWindsurfCardBatch(raw) {
++    const rawLines = String(raw || '').replace(/\r/g, '').split('\n');
++    const lines = [];
++    const valid = [];
++    const invalid = [];
++    rawLines.forEach((line, idx) => {
++      const trimmed = line.trim();
++      if (!trimmed) return;
++      lines.push({ line: trimmed, lineNo: idx + 1 });
++      const parsed = this._parseWindsurfCardLine(trimmed, idx + 1);
++      if (!parsed) return;
++      if (parsed.ok) valid.push(parsed);
++      else invalid.push(parsed);
++    });
++    return { lines, valid, invalid, tokenCount: valid.filter(x => x.token).length };
++  },
++
++  _parseWindsurfCardText(raw) {
++    return this._parseWindsurfCardBatch(raw).valid[0] || null;
++  },
++
++  renderWindsurfCardPreview(batch) {
++    const preview = document.getElementById('wl-batch-preview');
++    if (!preview) return;
++    const total = (batch?.valid?.length || 0) + (batch?.invalid?.length || 0);
++    if (!total) {
++      preview.classList.add('hidden');
++      preview.innerHTML = '';
++      return;
++    }
++    const chips = [];
++    for (const item of (batch.valid || []).slice(0, 6)) {
++      chips.push(`<span class="wl-batch-chip" title="第 ${item.lineNo} 行"><span>${this.esc(item.email)}</span></span>`);
++    }
++    const rest = (batch.valid || []).length - 6;
++    if (rest > 0) chips.push(`<span class="wl-batch-chip"><span>+${rest} 条</span></span>`);
++    if ((batch.invalid || []).length > 0) {
++      chips.push(`<span class="wl-batch-chip invalid" title="${this.esc(batch.invalid.map(x => `第 ${x.lineNo} 行：${x.reason}`).join('\n'))}"><span>${batch.invalid.length} 行格式待修正</span></span>`);
++    }
++    preview.innerHTML = chips.join('');
++    preview.classList.remove('hidden');
++  },
+
++  setWindsurfCardStatus(text, tone = 'muted') {
++    const el = document.getElementById('wl-card-status');
++    if (!el) return;
++    const color = tone === 'success' ? 'var(--success)' : tone === 'warn' ? 'var(--warn)' : tone === 'error' ? 'var(--error)' : 'var(--text-dim)';
++    el.textContent = text;
++    el.style.color = color;
++  },
++
++  updateWindsurfCardStatus() {
++    const cardEl = document.getElementById('wl-card');
++    const emailEl = document.getElementById('wl-email');
++    const passEl = document.getElementById('wl-password');
++    const modeEl = document.getElementById('wl-card-mode');
++    if (!cardEl || !emailEl || !passEl) return;
++    const card = cardEl.value.trim();
++    const email = emailEl.value.trim();
++    const pass = passEl.value.trim();
++    const autoAdd = document.getElementById('wl-auto-add')?.checked !== false;
++    const batch = this._parseWindsurfCardBatch(card);
++    this.renderWindsurfCardPreview(batch);
++    if (batch.valid.length > 1) {
++      if (modeEl) modeEl.textContent = `批量 ${batch.valid.length}`;
++      const invalidText = batch.invalid.length ? `，${batch.invalid.length} 行待修正` : '';
++      this.setWindsurfCardStatus(`已识别 ${batch.valid.length} 个账号${invalidText}${autoAdd ? '，登录成功会自动入池' : ''}`, batch.invalid.length ? 'warn' : 'success');
++      return;
++    }
++    if (batch.valid.length === 1) {
++      if (modeEl) modeEl.textContent = '单条';
++      const parsed = batch.valid[0];
++      const invalidText = batch.invalid.length ? `，另有 ${batch.invalid.length} 行待修正` : '';
++      this.setWindsurfCardStatus(`${parsed.token ? '已识别邮箱和密码，session token 不会在本页使用' : '已识别邮箱和密码'}${invalidText}`, batch.invalid.length ? 'warn' : 'success');
++      return;
++    }
++    if (modeEl) modeEl.textContent = '自动识别';
++    if (card) {
++      const invalidText = batch.invalid.length ? `：${batch.invalid[0].reason}` : '';
++      this.setWindsurfCardStatus(`未识别到可登录卡密${invalidText}，请使用：邮箱----密码----session token`, 'warn');
++      return;
++    }
++    const pastedInEmail = this._parseWindsurfCardText(email);
++    if (pastedInEmail) {
++      this.setWindsurfCardStatus('邮箱框里识别到整条卡密，可自动拆分', 'success');
++      return;
++    }
++    if (email || pass) {
++      this.setWindsurfCardStatus('手动填写中', 'muted');
++      return;
++    }
++    this.setWindsurfCardStatus('等待粘贴整条卡密', 'muted');
++  },
++
++  parseWindsurfCard(source = 'wl-card') {
++    const emailEl = document.getElementById('wl-email');
++    const passEl = document.getElementById('wl-password');
++    const cardEl = document.getElementById('wl-card');
++    if (!emailEl || !passEl) return null;
++    const raw = source === 'wl-email'
++      ? emailEl.value.trim()
++      : cardEl?.value.trim() || '';
++    const batch = this._parseWindsurfCardBatch(raw);
++    const parsed = batch.valid[0];
++    if (!parsed) {
++      this.updateWindsurfCardStatus();
++      return null;
++    }
++    emailEl.value = parsed.email;
++    passEl.value = parsed.password;
++    this.renderWindsurfCardPreview(batch);
++    const extra = batch.valid.length > 1 ? `，当前填入第 1 条，剩余 ${batch.valid.length - 1} 条可批量登录` : '';
++    this.setWindsurfCardStatus(`${parsed.token ? '已拆分邮箱和密码，session token 仅保留在卡密框中' : '已拆分邮箱和密码'}${extra}`, 'success');
++    return parsed;
++  },
++
++  applyWindsurfCard() {
++    const batch = this._parseWindsurfCardBatch(document.getElementById('wl-card')?.value || '');
++    const parsed = this.parseWindsurfCard('wl-card');
++    if (!parsed) {
++      this.toast('未识别到卡密格式', 'error');
++      return null;
++    }
++    document.getElementById('wl-password')?.focus();
++    this.toast(batch.valid.length > 1 ? `已填入首条，可批量处理 ${batch.valid.length} 条` : '已拆分邮箱和密码');
++    return parsed;
++  },
++
++  clearWindsurfCard() {
++    const cardEl = document.getElementById('wl-card');
++    if (cardEl) cardEl.value = '';
++    this.renderWindsurfCardPreview({ valid: [], invalid: [] });
++    this.updateWindsurfCardStatus();
++  },
++
++  getWindsurfLoginProxy() {
+     const proxyHost = document.getElementById('wl-proxy-host').value.trim();
+-    const proxy = proxyHost ? {
++    return proxyHost ? {
+       type: document.getElementById('wl-proxy-type').value,
+       host: proxyHost,
+       port: parseInt(document.getElementById('wl-proxy-port').value) || 8080,
+       username: document.getElementById('wl-proxy-user').value,
+       password: document.getElementById('wl-proxy-pass').value,
+     } : null;
+-    const autoAdd = document.getElementById('wl-auto-add').checked;
++  },
+
++  setWindsurfLoginBusy(busy, label = '登录中...') {
+     const btn = document.getElementById('wl-btn');
+-    btn.disabled = true;
+-    btn.innerHTML = '<span class="spinner"></span> 登录中...';
++    const batchBtn = document.getElementById('wl-batch-btn');
++    const loginIcon = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/><polyline points="10 17 15 12 10 7"/><line x1="15" y1="12" x2="3" y2="12"/></svg>';
++    const batchIcon = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>';
++    if (btn) {
++      btn.disabled = busy;
++      btn.innerHTML = busy ? `<span class="spinner"></span> ${this.esc(label)}` : `${loginIcon} 登录`;
++    }
++    if (batchBtn) {
++      batchBtn.disabled = busy;
++      batchBtn.innerHTML = busy ? `<span class="spinner"></span> ${this.esc(label)}` : `${batchIcon} 批量登录入池`;
++    }
++  },
++
++  recordWindsurfLoginEntries(entries) {
++    const rows = (entries || []).filter(Boolean);
++    if (!rows.length) return;
++    this.loginHistory.unshift(...rows);
++    if (this.loginHistory.length > 50) this.loginHistory.length = 50;
++    localStorage.setItem('wl_history', JSON.stringify(this.loginHistory));
++    this.renderLoginHistory();
++  },
++
++  renderWindsurfSingleResult(r, autoAdd) {
++    const rd = document.getElementById('wl-result');
++    if (!rd) return;
++    rd.classList.remove('hidden');
++    rd.innerHTML = `
++      <div class="section-header">
++        <div>
++          <div class="section-title" style="color:var(--success)">✓ 登录成功</div>
++          <div class="section-desc">凭据已生成${autoAdd ? '并加入账号池' : ''}</div>
++        </div>
++      </div>
++      <div class="section-body">
++        <table class="wl-result-table">
++          <tr><td>邮箱</td><td>${this.esc(r.email)}</td></tr>
++          <tr><td>姓名</td><td>${this.esc(r.name || '-')}</td></tr>
++          <tr><td>凭据预览</td><td><code>${this.esc(r.keyPreview || '-')}</code></td></tr>
++          ${(r.orgs || []).length ? `<tr><td>组织</td><td>${(r.orgs || []).length} 个${r.requiresOrgSelection ? '（已使用默认返回）' : ''}</td></tr>` : ''}
++          ${r.account ? `<tr><td>账号 ID</td><td><code>${this.esc(r.account.id)}</code> <span class="badge active">${this.esc(r.account.status)}</span></td></tr>` : ''}
++        </table>
++      </div>`;
++  },
++
++  renderWindsurfFailureResult(message) {
++    const rd = document.getElementById('wl-result');
++    if (!rd) return;
++    rd.classList.remove('hidden');
++    rd.innerHTML = `
++      <div class="section-header">
++        <div>
++          <div class="section-title" style="color:var(--error)">✗ 登录失败</div>
++        </div>
++      </div>
++      <div class="section-body"><p class="text-sm">${this.esc(message || '未知错误')}</p></div>`;
++  },
++
++  renderWindsurfBatchResult(results, invalid, autoAdd) {
++    const rd = document.getElementById('wl-result');
++    if (!rd) return;
++    const okCount = results.filter(x => x.ok).length;
++    const failCount = results.length - okCount;
++    const invalidCount = invalid.length;
++    const rows = results.map((item, idx) => `
++      <tr>
++        <td class="text-sm nowrap">#${idx + 1}</td>
++        <td>${this.esc(item.email)}</td>
++        <td><span class="badge ${item.ok ? 'active' : 'error'}">${item.ok ? '成功' : '失败'}</span></td>
++        <td class="text-sm">${item.ok ? this.esc(item.response?.keyPreview || '-') : this.esc(item.error || '未知错误')}</td>
++      </tr>
++    `).join('');
++    const invalidRows = invalid.map(item => `
++      <tr>
++        <td class="text-sm nowrap">第 ${item.lineNo} 行</td>
++        <td class="text-dim">原文已隐藏</td>
++        <td><span class="badge warn">格式无效</span></td>
++        <td class="text-sm">${this.esc(item.reason)}</td>
++      </tr>
++    `).join('');
++    rd.classList.remove('hidden');
++    rd.innerHTML = `
++      <div class="section-header">
++        <div>
++          <div class="section-title" style="color:${failCount || invalidCount ? 'var(--warn)' : 'var(--success)'}">批量登录完成</div>
++          <div class="section-desc">成功 ${okCount} 个，失败 ${failCount} 个${invalidCount ? `，格式无效 ${invalidCount} 行` : ''}${autoAdd ? '，成功项已自动加入账号池' : ''}</div>
++        </div>
++      </div>
++      <div class="section-body tight">
++        <div class="table-wrap">
++          <table>
++            <thead><tr><th>序号</th><th>账号</th><th>状态</th><th>结果</th></tr></thead>
++            <tbody>${rows}${invalidRows}</tbody>
++          </table>
++        </div>
++      </div>`;
++  },
++
++  async windsurfLogin() {
++    const cardBatch = this._parseWindsurfCardBatch(document.getElementById('wl-card')?.value || '');
++    if (cardBatch.valid.length > 1 || (cardBatch.valid.length && cardBatch.invalid.length)) {
++      return this.windsurfBatchLogin();
++    }
++    this.parseWindsurfCard('wl-card') || this.parseWindsurfCard('wl-email');
++    const email = document.getElementById('wl-email').value.trim();
++    const password = document.getElementById('wl-password').value.trim();
++    if (!email || !password) return this.toast('请输入邮箱和密码', 'error');
++
++    const proxy = this.getWindsurfLoginProxy();
++    const autoAdd = document.getElementById('wl-auto-add').checked;
++
++    this.setWindsurfLoginBusy(true, '登录中...');
+
+     const entry = { time: new Date().toISOString(), email, proxy: proxy ? `${proxy.type}://${proxy.host}:${proxy.port}` : '全局', status: 'pending' };
+
+@@ -2110,49 +3113,95 @@ const App = {
+       const r = await this.api('POST', '/windsurf-login', { email, password, proxy, autoAdd });
+       if (r.success) {
+         entry.status = 'success';
+-        entry.apiKey = r.apiKey?.slice(0, 16) + '...';
+-        const rd = document.getElementById('wl-result');
+-        rd.classList.remove('hidden');
+-        rd.innerHTML = `
+-          <div class="section-header">
+-            <div>
+-              <div class="section-title" style="color:var(--success)">✓ 登录成功</div>
+-              <div class="section-desc">API Key 已生成${autoAdd ? '并加入账号池' : ''}</div>
+-            </div>
+-          </div>
+-          <div class="section-body">
+-            <table style="background:transparent">
+-              <tr><td style="color:var(--text-muted);width:120px">邮箱</td><td>${this.esc(r.email)}</td></tr>
+-              <tr><td style="color:var(--text-muted)">姓名</td><td>${this.esc(r.name || '-')}</td></tr>
+-              <tr><td style="color:var(--text-muted)">API Key</td><td><code class="break-all">${this.esc(r.apiKey)}</code></td></tr>
+-              ${r.account ? `<tr><td style="color:var(--text-muted)">账号 ID</td><td><code>${r.account.id}</code> <span class="badge active">${r.account.status}</span></td></tr>` : ''}
+-            </table>
+-          </div>`;
+-        this.toast('登录成功，账号已加入');
++        entry.apiKey = r.keyPreview || '';
++        this.renderWindsurfSingleResult(r, autoAdd);
++        const cardEl = document.getElementById('wl-card');
++        const passEl = document.getElementById('wl-password');
++        if (cardEl) cardEl.value = '';
++        if (passEl) passEl.value = '';
++        this.setWindsurfCardStatus('登录成功，卡密与密码已清空', 'success');
++        this.toast(autoAdd ? '登录成功，账号已加入' : '登录成功，凭据已生成');
+       } else {
+         entry.status = 'error: ' + (r.error || 'unknown');
+-        const rd = document.getElementById('wl-result');
+-        rd.classList.remove('hidden');
+-        rd.innerHTML = `
+-          <div class="section-header">
+-            <div>
+-              <div class="section-title" style="color:var(--error)">✗ 登录失败</div>
+-            </div>
+-          </div>
+-          <div class="section-body"><p class="text-sm">${this.esc(r.error || '未知错误')}</p></div>`;
++        this.renderWindsurfFailureResult(r.error || '未知错误');
+         this.toast(r.error || '登录失败', 'error');
+       }
+     } catch (err) {
+       entry.status = 'error: ' + err.message;
++      this.renderWindsurfFailureResult(err.message);
+       this.toast(err.message, 'error');
++    } finally {
++      this.recordWindsurfLoginEntries([entry]);
++      this.setWindsurfLoginBusy(false);
++      this.updateWindsurfCardStatus();
+     }
++  },
+
+-    this.loginHistory.unshift(entry);
+-    if (this.loginHistory.length > 50) this.loginHistory.length = 50;
+-    localStorage.setItem('wl_history', JSON.stringify(this.loginHistory));
+-    this.renderLoginHistory();
+-    btn.disabled = false;
+-    btn.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/><polyline points="10 17 15 12 10 7"/><line x1="15" y1="12" x2="3" y2="12"/></svg> 登录';
++  async windsurfBatchLogin() {
++    const cardEl = document.getElementById('wl-card');
++    const emailEl = document.getElementById('wl-email');
++    const passEl = document.getElementById('wl-password');
++    const batch = this._parseWindsurfCardBatch(cardEl?.value || '');
++    this.renderWindsurfCardPreview(batch);
++    if (!batch.valid.length) {
++      this.updateWindsurfCardStatus();
++      return this.toast(batch.invalid.length ? '没有可登录的有效卡密，请先修正格式' : '请先粘贴批量卡密', 'error');
++    }
++
++    const proxy = this.getWindsurfLoginProxy();
++    const autoAdd = document.getElementById('wl-auto-add').checked;
++    const results = [];
++    const entries = [];
++
++    this.setWindsurfLoginBusy(true, `0/${batch.valid.length} 登录中...`);
++    try {
++      for (let i = 0; i < batch.valid.length; i++) {
++        const item = batch.valid[i];
++        this.setWindsurfLoginBusy(true, `${i + 1}/${batch.valid.length} 登录中...`);
++        this.setWindsurfCardStatus(`正在登录 ${i + 1}/${batch.valid.length}：${item.email}`, 'muted');
++        const entry = { time: new Date().toISOString(), email: item.email, proxy: proxy ? `${proxy.type}://${proxy.host}:${proxy.port}` : '全局', status: 'pending' };
++        try {
++          const r = await this.api('POST', '/windsurf-login', { email: item.email, password: item.password, proxy, autoAdd });
++          if (r.success) {
++            entry.status = 'success';
++            entry.apiKey = r.keyPreview || '';
++            results.push({ ok: true, email: item.email, card: item, response: r });
++          } else {
++            const error = r.error || '未知错误';
++            entry.status = 'error: ' + error;
++            results.push({ ok: false, email: item.email, card: item, error });
++          }
++        } catch (err) {
++          entry.status = 'error: ' + err.message;
++          results.push({ ok: false, email: item.email, card: item, error: err.message });
++        }
++        entries.push(entry);
++      }
++    } finally {
++      this.recordWindsurfLoginEntries(entries);
++      this.setWindsurfLoginBusy(false);
++    }
++
++    const successLineNos = new Set(results.filter(x => x.ok).map(x => x.card.lineNo));
++    const remaining = batch.lines.filter(x => !successLineNos.has(x.lineNo)).map(x => x.line);
++    if (cardEl) cardEl.value = remaining.join('\n');
++    if (passEl) passEl.value = '';
++    if (emailEl && !remaining.length) emailEl.value = '';
++
++    this.renderWindsurfBatchResult(results, batch.invalid, autoAdd);
++    this.updateWindsurfCardStatus();
++
++    const okCount = results.filter(x => x.ok).length;
++    const failCount = results.length - okCount;
++    const invalidCount = batch.invalid.length;
++    const tone = failCount || invalidCount ? 'warn' : 'success';
++    this.setWindsurfCardStatus(
++      failCount || invalidCount
++        ? `批量完成：成功 ${okCount}，失败 ${failCount}，待修正 ${invalidCount} 行；失败/无效行已保留`
++        : `批量完成：${okCount} 个账号已处理，卡密与密码已清空`,
++      tone
++    );
++    this.toast(`批量完成：成功 ${okCount}，失败 ${failCount}${invalidCount ? `，格式无效 ${invalidCount}` : ''}`, tone === 'success' ? 'success' : 'warn');
+   },
+
+   renderLoginHistory() {
+@@ -2187,6 +3236,7 @@ const App = {
+       this.api('GET', '/models').catch(() => ({})),
+     ]);
+     this.accountModelCatalog = Object.fromEntries((modelData.models || []).map(m => [m.id, m]));
++    this.accountKeyById = Object.fromEntries((d.accounts || []).map(a => [a.id, a.apiKey]).filter(([, key]) => !!key));
+     if (ov?.langServer) {
+       const instances = ov.langServer.instances || [];
+       const poolCard = document.getElementById('ls-pool-card');
+@@ -2219,63 +3269,67 @@ const App = {
+         poolCard.innerHTML = '';
+       }
+     }
+-  }
+-    const tbody = document.querySelector('#accounts-table tbody');
++    }
++    this.accountRows = d.accounts || [];
++    this.accountOverview = ov || {};
++    this.renderAccounts();
++  },
++
++  renderAccounts() {
++    const list = document.querySelector('#accounts-table .account-list-body');
++    if (!list) return;
++    const accounts = this.getFilteredAccounts();
++    const total = this.accountRows.length;
++    const countEl = document.getElementById('account-filter-count');
++    if (countEl) {
++      countEl.textContent = accounts.length === total
++        ? `${total} 个账号`
++        : `显示 ${accounts.length} / ${total} 个`;
++    }
++    const ov = this.accountOverview || {};
+     const tierLabel = { pro: 'PRO', free: 'FREE', expired: '已过期', unknown: '未知' };
+-    tbody.innerHTML = (d.accounts || []).map(a => {
++    list.innerHTML = accounts.map(a => {
++      const status = a.status || 'unknown';
+       const tier = a.tier || 'unknown';
++      const modelLimits = this.normalizeModelLimits(a);
++      const modelLimitBadge = this.renderModelLimitChips(modelLimits, { compact: true });
++      const globalLimitBadge = a.rateLimited && a.rateLimitedUntil
++        ? `<span class="cooldown-chip" title="全局限流到 ${new Date(a.rateLimitedUntil).toLocaleString()}"><span>全局</span>${this.fmtRemainingMs(a.rateLimitedUntil - Date.now())}</span>`
++        : '';
++      const recoveryHint = (status === 'error' || status === 'expired')
++        ? `<span class="badge warn" title="可尝试安全恢复">可恢复?</span>`
++        : '';
+       // Compact summary: avail/total + 编辑 button. Clicking opens modal.
+       const tierModels = a.tierModels || [];
+       const blockedCount = (a.blockedModels || []).length;
+       const availCount = tierModels.length - blockedCount;
+       const capsHtml = tierModels.length
+-        ? `<button class="btn btn-ghost btn-xs" style="min-width:96px" onclick="App.openBlockedModal('${a.id}')" title="编辑该账号可用模型">
++        ? `<button class="btn btn-ghost btn-xs" onclick="App.openBlockedModal('${a.id}')" title="编辑该账号可用模型">
++             <span>模型</span>
+              <span style="color:var(--success,#10b981);font-weight:600">${availCount}</span>
+              <span style="color:var(--text-dim)">/${tierModels.length}</span>
+              ${blockedCount > 0 ? `<span class="badge warn" style="margin-left:4px">-${blockedCount}</span>` : ''}
+            </button>`
+         : `<span class="text-xs text-dim">-</span>`;
+-      const rateLimitBadge = a.rateLimited ? ` <span class="badge warn">限流中</span>` : '';
+-      const rpmUsed = a.rpmUsed ?? 0;
+-      const rpmLimit = a.rpmLimit ?? 0;
+-      const rpmPct = rpmLimit > 0 ? Math.min(100, Math.round((rpmUsed / rpmLimit) * 100)) : 0;
+-      const rpmColor = rpmPct >= 90 ? 'var(--error)' : rpmPct >= 60 ? 'var(--warn, #f59e0b)' : 'var(--success, #10b981)';
+-      const rpmCell = rpmLimit > 0
+-        ? `<div style="min-width:90px">
+-            <div class="text-xs" style="display:flex;justify-content:space-between;margin-bottom:2px">
+-              <span>${rpmUsed}/${rpmLimit}</span><span style="color:${rpmColor}">${rpmPct}%</span>
+-            </div>
+-            <div style="height:4px;background:var(--surface-3);border-radius:2px;overflow:hidden">
+-              <div style="height:100%;width:${rpmPct}%;background:${rpmColor};transition:width .3s"></div>
+-            </div>
+-           </div>`
+-        : `<span class="text-xs text-dim">-</span>`;
+-
+-      // Credit / quota cell — collapses the legacy credit contract and the
+-      // newer daily/weekly percent contract into a single progress bar.
++      // Credit / quota summary — keep the row compact; full details live in the expander.
+       const cr = a.credits || null;
+-      let creditCell;
++      let creditSummary;
+       if (!cr) {
+-        creditCell = `<span class="text-xs text-dim">尚未获取</span>`;
++        creditSummary = `<span class="text-xs text-dim">额度：尚未获取</span>`;
+       } else if (cr.lastError && cr.percent == null && !cr.prompt?.limit) {
+-        creditCell = `<span class="text-xs" style="color:var(--error)" title="${this.esc(cr.lastError)}">获取失败</span>`;
++        creditSummary = `<span class="text-xs" style="color:var(--error)" title="${this.esc(cr.lastError)}">额度获取失败</span>`;
+       } else {
+         const planName = cr.planName || '-';
+         const fetchedAgo = cr.fetchedAt ? Math.round((Date.now() - cr.fetchedAt) / 60000) + 'm ago' : '-';
+
+-        const barHtml = (label, pct, resetAt) => {
++        const quotaChip = (label, pct, resetAt) => {
+           if (pct == null) return '';
+           const v = Math.max(0, Math.min(100, pct));
+-          const color = v <= 10 ? 'var(--error)' : v <= 30 ? 'var(--warn, #f59e0b)' : 'var(--success, #10b981)';
++          const state = v <= 10 ? 'error' : v <= 30 ? 'warn' : '';
+           const resetStr = resetAt ? new Date(resetAt * 1000).toLocaleString() : '';
+-          return `<div style="margin-bottom:3px" title="${label} 剩余 ${v.toFixed(1)}%${resetStr ? '，重置: ' + resetStr : ''}">
+-            <div class="text-xs" style="display:flex;justify-content:space-between;margin-bottom:1px">
+-              <span style="color:var(--text-dim)">${label}</span><span style="color:${color};font-weight:600">${v.toFixed(0)}%</span>
+-            </div>
+-            <div style="height:5px;background:var(--surface-3);border-radius:2px;overflow:hidden">
+-              <div style="height:100%;width:${v}%;background:${color};transition:width .3s"></div>
+-            </div>
+-          </div>`;
++          return `<span class="quota-chip ${state}" title="${label} 剩余 ${v.toFixed(1)}%${resetStr ? '，重置: ' + resetStr : ''}">
++            <span>${label}</span><strong>${v.toFixed(0)}%</strong>
++          </span>`;
+         };
+
+         const tipLines = [
+@@ -2287,63 +3341,106 @@ const App = {
+           cr.lastError ? `Last error: ${cr.lastError}` : '',
+         ].filter(Boolean).join('\n');
+
+-        creditCell = `<div style="min-width:140px" title="${this.esc(tipLines)}">
+-            <div class="text-xs" style="display:flex;justify-content:space-between;margin-bottom:3px">
+-              <span style="font-weight:600">${this.esc(planName.slice(0, 10))}</span>
+-              <span class="text-dim">${fetchedAgo}</span>
+-            </div>
+-            ${barHtml('日额度', cr.dailyPercent, cr.dailyResetAt)}
+-            ${barHtml('周额度', cr.weeklyPercent, cr.weeklyResetAt)}
+-            ${cr.prompt?.limit ? barHtml('Prompt', cr.percent, null) : ''}
++        const chips = [
++          quotaChip('日', cr.dailyPercent, cr.dailyResetAt),
++          quotaChip('周', cr.weeklyPercent, cr.weeklyResetAt),
++          cr.prompt?.limit ? quotaChip('Prompt', cr.percent, null) : '',
++        ].filter(Boolean).join('');
++        creditSummary = `<div class="account-quota-summary" title="${this.esc(tipLines)}">
++            <span class="tier ${tier}">${this.esc((planName || tierLabel[tier] || tier).slice(0, 10))}</span>
++            ${chips || `<span class="text-xs text-dim">更新：${fetchedAgo}</span>`}
+           </div>`;
+       }
+       const detailId = `acct-detail-${a.id}`;
++      const primaryAction = status === 'active'
++        ? `<button class="btn btn-outline btn-xs" onclick="App.toggleAccount('${a.id}','disabled')">停用</button>`
++        : `<button class="btn btn-success btn-xs" onclick="App.toggleAccount('${a.id}','active')">启用</button>`;
++      const recoverAction = (status === 'error' || status === 'expired')
++        ? `<button class="btn btn-outline btn-xs" onclick="App.recoverAccount('${a.id}')">恢复</button>`
++        : '';
+       return `
+-      <tr>
+-        <td><input type="checkbox" class="acct-cb" data-id="${a.id}" onchange="App.updateBatchBar()"></td>
+-        <td>
+-          <button class="detail-toggle" onclick="App.toggleAccountDetail('${detailId}', this)" title="展开详情">›</button>
+-          <code>${a.id}</code>
+-        </td>
+-        <td>${this.esc(a.email)}</td>
+-        <td><span class="tier ${tier}">${tierLabel[tier] || tier}</span></td>
+-        <td>${rpmCell}</td>
+-        <td>${creditCell}</td>
+-        <td>${capsHtml}</td>
+-        <td><span class="badge ${a.status}">${a.status}</span>${rateLimitBadge}</td>
+-        <td style="color:${a.errorCount > 0 ? 'var(--error)' : 'inherit'}">${a.errorCount}</td>
+-        <td class="text-sm nowrap">${a.lastUsed ? new Date(a.lastUsed).toLocaleString() : '-'}</td>
+-        <td class="nowrap">
+-          <code style="cursor:pointer" title="点击复制" onclick="App.copyKey('${this.esc(a.apiKey)}')">${a.keyPrefix}</code>
+-        </td>
+-        <td class="nowrap">
+-          <div class="btn-group">
+-            <button class="btn btn-ghost btn-xs" onclick="App.probeAccount('${a.id}')" title="探测能力">探测</button>
+-            <button class="btn btn-ghost btn-xs" onclick="App.refreshCredits('${a.id}')" title="刷新余额">余额</button>
+-            ${a.status === 'active'
+-              ? `<button class="btn btn-ghost btn-xs" onclick="App.toggleAccount('${a.id}','disabled')">停用</button>`
+-              : `<button class="btn btn-success btn-xs" onclick="App.toggleAccount('${a.id}','active')">启用</button>`}
+-            <button class="btn btn-ghost btn-xs" onclick="App.resetErrors('${a.id}')">重置</button>
+-            <button class="btn btn-ghost btn-xs" style="color:var(--error)" onclick="App.deleteAccount('${a.id}')">删除</button>
++      <div class="account-row ${status}" role="row">
++        <div class="account-select-cell"><input type="checkbox" class="acct-cb" data-id="${a.id}" onchange="App.updateBatchBar()"></div>
++        <div class="account-primary">
++          <div class="account-cell">
++            <button class="detail-toggle" onclick="App.toggleAccountDetail('${detailId}', this)" title="展开详情">›</button>
++            <div>
++              <div class="account-main" title="${this.esc(a.email || '-')}">${this.esc(a.email || '-')}</div>
++              <div class="account-meta"><code>${this.esc(a.id)}</code><span>${this.esc(a.method || '-')}</span><span class="tier ${tier}">${tierLabel[tier] || tier}</span></div>
++            </div>
+           </div>
+-        </td>
+-      </tr>
+-      <tr id="${detailId}" class="account-detail-row" style="display:none">
+-        <td colspan="12">${this.renderAccountDetail(a, ov)}</td>
+-      </tr>`;
+-    }).join('') || '<tr class="empty-row"><td colspan="12">暂无账号，请先添加</td></tr>';
++        </div>
++        <div class="account-state"><div class="status-stack"><span class="badge ${status}">${this.esc(status)}</span>${recoveryHint}${globalLimitBadge}${modelLimitBadge}</div></div>
++        <div class="account-snapshot">
++          ${creditSummary}
++          <span class="account-model-summary">${capsHtml}</span>
++        </div>
++        <div class="account-row-actions">${primaryAction}${recoverAction}</div>
++      </div>
++      <div id="${detailId}" class="account-detail-row">
++        ${this.renderAccountDetail(a, ov)}
++      </div>`;
++    }).join('') || this.renderAccountEmptyState(total);
++    this.updateBatchBar();
++  },
++
++  getFilteredAccounts() {
++    const query = (document.getElementById('account-search')?.value || '').trim().toLowerCase();
++    const statusFilter = document.getElementById('account-status-filter')?.value || '';
++    const tierFilter = document.getElementById('account-tier-filter')?.value || '';
++    return (this.accountRows || []).filter(a => {
++      const status = a.status || 'unknown';
++      const tier = a.tier || 'unknown';
++      const cr = a.credits || {};
++      const modelLimits = this.normalizeModelLimits(a);
++      if (statusFilter === 'rateLimited') {
++        if (!a.rateLimited && modelLimits.length === 0) return false;
++      } else if (statusFilter === 'recoverable') {
++        if (status !== 'error' && status !== 'expired') return false;
++      } else if (statusFilter && status !== statusFilter) {
++        return false;
++      }
++      if (tierFilter && tier !== tierFilter) return false;
++      if (!query) return true;
++      const searchable = [
++        a.id, a.email, a.label, a.keyPrefix, a.method, status, tier,
++        cr.planName, cr.lastError,
++        ...(a.tierModels || []),
++        ...(a.blockedModels || []),
++        ...modelLimits.map(x => x.model),
++      ].filter(Boolean).join(' ').toLowerCase();
++      return searchable.includes(query);
++    });
++  },
++
++  filterAccounts() {
++    this.renderAccounts();
++  },
++
++  clearAccountFilters() {
++    const search = document.getElementById('account-search');
++    const status = document.getElementById('account-status-filter');
++    const tier = document.getElementById('account-tier-filter');
++    if (search) search.value = '';
++    if (status) status.value = '';
++    if (tier) tier.value = '';
++    this.renderAccounts();
+   },
+
+   toggleAccountDetail(rowId, btn) {
+     const row = document.getElementById(rowId);
+     if (!row) return;
+-    const open = row.style.display === 'none';
+-    row.style.display = open ? 'table-row' : 'none';
++    const open = row.style.display === 'none' || getComputedStyle(row).display === 'none';
++    row.style.display = open ? 'block' : 'none';
+     if (btn) btn.classList.toggle('open', open);
+   },
+
+   renderAccountDetail(a, ov) {
+     const cr = a.credits || {};
++    const modelLimits = this.normalizeModelLimits(a);
++    const modelLimitList = modelLimits.length
++      ? `<div class="cooldown-list">${this.renderModelLimitChips(modelLimits, { compact: false })}</div>`
++      : '<div class="text-sm text-dim">当前没有模型级冷却</div>';
+     const tierModels = a.tierModels || [];
+     const blocked = new Set(a.blockedModels || []);
+     const byProvider = {};
+@@ -2387,6 +3484,14 @@ const App = {
+     const lsMatches = (ov?.langServer?.instances || []).filter(i => i.accountId === a.id || i.key === a.callerKey);
+     return `
+       <div class="account-detail-wrap">
++        <div class="account-detail-actions">
++          <button class="btn btn-ghost btn-xs" onclick="App.probeAccount('${a.id}')" title="探测能力">探测</button>
++          <button class="btn btn-ghost btn-xs" onclick="App.refreshCredits('${a.id}')" title="刷新余额">余额</button>
++          <button class="btn btn-ghost btn-xs" onclick="App.openBlockedModal('${a.id}')" title="编辑可用模型">模型</button>
++          <button class="btn btn-ghost btn-xs" onclick="App.copyAccountKey('${a.id}')" title="复制完整 Key">复制 Key</button>
++          <button class="btn btn-ghost btn-xs" onclick="App.resetErrors('${a.id}')">重置错误</button>
++          <button class="btn btn-ghost btn-xs" style="color:var(--error)" onclick="App.deleteAccount('${a.id}')">删除</button>
++        </div>
+         <div class="account-detail-grid">
+           <div class="account-detail-card">
+             <div class="account-detail-title">账号状态</div>
+@@ -2406,7 +3511,9 @@ const App = {
+             <div class="account-detail-title">运行关联</div>
+             <div class="account-detail-kv"><span>RPM</span><strong>${a.rpmUsed ?? 0}/${a.rpmLimit ?? '-'}</strong></div>
+             <div class="account-detail-kv"><span>限流</span><strong>${a.rateLimited ? '是' : '否'}</strong></div>
++            <div class="account-detail-kv"><span>模型冷却</span><strong>${modelLimits.length || '无'}</strong></div>
+             <div class="account-detail-kv"><span>LS 实例</span><strong>${lsMatches.length || '-'}</strong></div>
++            ${modelLimitList}
+           </div>
+         </div>
+         <div class="account-detail-card account-detail-models">
+@@ -2641,6 +3748,34 @@ const App = {
+     this.toast('账号已删除');
+   },
+
++  async recoverAccounts(selectedOnly = false) {
++    const ids = this._getSelectedIds();
++    if (selectedOnly && !ids.length) return this.toast('请先勾选账号', 'error');
++    const scoped = ids.length > 0;
++    const desc = scoped
++      ? `将只检查已选的 ${ids.length} 个账号；手动停用的账号不会被恢复。`
++      : '将检查全部账号；只有有近期可用证据的 error/expired 账号会恢复，手动停用的账号不会动。';
++    const ok = await this.confirm('安全恢复账号', desc, { okText: '恢复' });
++    if (!ok) return;
++    const r = await this.api('POST', '/accounts/recover', { ids: scoped ? ids : [], mode: 'safe' });
++    if (!r.success) return this.toast(r.error || '恢复失败', 'error');
++    const restored = r.restored?.length || 0;
++    const skipped = r.skipped?.length || 0;
++    this.toast(`恢复完成：${restored} 个恢复，${skipped} 个跳过`, restored > 0 ? 'success' : 'info');
++    this.loadAccounts();
++  },
++
++  async recoverAccount(id) {
++    const ok = await this.confirm('安全恢复账号', '只检查这个账号；手动停用状态不会被强行恢复。', { okText: '恢复' });
++    if (!ok) return;
++    const r = await this.api('POST', '/accounts/recover', { ids: [id], mode: 'safe' });
++    if (!r.success) return this.toast(r.error || '恢复失败', 'error');
++    const restored = r.restored?.length || 0;
++    const skipped = r.skipped?.length || 0;
++    this.toast(`恢复完成：${restored} 个恢复，${skipped} 个跳过`, restored > 0 ? 'success' : 'info');
++    this.loadAccounts();
++  },
++
+   // ─── Batch selection ──────────────────────────
+   _getSelectedIds() {
+     return [...document.querySelectorAll('.acct-cb:checked')].map(cb => cb.dataset.id);
+@@ -2652,14 +3787,17 @@ const App = {
+     const ids = this._getSelectedIds();
+     const bar = document.getElementById('batch-bar');
+     if (ids.length > 0) {
+-      bar.style.display = 'flex';
++      bar.classList.add('active');
+       document.getElementById('batch-count').textContent = `已选 ${ids.length} 个`;
+     } else {
+-      bar.style.display = 'none';
++      bar.classList.remove('active');
+     }
+     const allCbs = this._getAllCbs();
+     const selectAll = document.getElementById('acct-select-all');
+-    if (selectAll) selectAll.checked = allCbs.length > 0 && ids.length === allCbs.length;
++    if (selectAll) {
++      selectAll.checked = allCbs.length > 0 && ids.length === allCbs.length;
++      selectAll.indeterminate = ids.length > 0 && ids.length < allCbs.length;
++    }
+   },
+   onSelectAllToggle(checked) {
+     this._getAllCbs().forEach(cb => cb.checked = checked);
+@@ -2873,19 +4011,40 @@ const App = {
+   },
+
+   // ─── Logs ────────────────────────────────────
+-  loadLogs() {
++  async loadLogs() {
+     this.logEntries = [];
+     document.getElementById('log-container').innerHTML = '';
+-    this.sseConn = new EventSource('/dashboard/api/logs/stream');
+-    this.sseConn.onmessage = (e) => {
+-      try {
+-        const entry = JSON.parse(e.data);
+-        this.logEntries.push(entry);
+-        if (this.logEntries.length > 500) this.logEntries.shift();
+-        this.renderLogEntry(entry);
+-      } catch {}
+-    };
+-    this.sseConn.onerror = () => {};
++    const controller = new AbortController();
++    this.sseConn = { close: () => controller.abort() };
++    try {
++      const headers = {};
++      if (this.password) headers['X-Dashboard-Password'] = this.password;
++      const res = await fetch('/dashboard/api/logs/stream', { headers, signal: controller.signal });
++      if (!res.ok) throw new Error(`日志流连接失败 (${res.status})`);
++      const reader = res.body?.getReader();
++      if (!reader) throw new Error('浏览器不支持日志流读取');
++      const decoder = new TextDecoder();
++      let buffer = '';
++      while (true) {
++        const { value, done } = await reader.read();
++        if (done) break;
++        buffer += decoder.decode(value, { stream: true });
++        const parts = buffer.split('\n\n');
++        buffer = parts.pop() || '';
++        for (const part of parts) {
++          const line = part.split('\n').find(x => x.startsWith('data: '));
++          if (!line) continue;
++          try {
++            const entry = JSON.parse(line.slice(6));
++            this.logEntries.push(entry);
++            if (this.logEntries.length > 500) this.logEntries.shift();
++            this.renderLogEntry(entry);
++          } catch {}
++        }
++      }
++    } catch (e) {
++      if (e.name !== 'AbortError') this.toast(e.message || '日志流连接失败', 'error');
++    }
+   },
+
+   renderLogEntry(entry) {
+@@ -3165,12 +4324,12 @@ const App = {
+
+     // Top metric cards — add Tokens and Credits alongside existing counters
+     document.getElementById('stats-cards').innerHTML = `
+-      <div class="card info"><div class="card-header"><div class="card-title">总请求</div></div><div class="card-value">${d.totalRequests || 0}</div></div>
+-      <div class="card success"><div class="card-header"><div class="card-title">成功</div></div><div class="card-value">${d.successCount || 0}</div></div>
+-      <div class="card error"><div class="card-header"><div class="card-title">错误</div></div><div class="card-value">${d.errorCount || 0}</div></div>
++      <div class="card info"><div class="card-header"><div class="card-title">总请求</div></div><div class="card-value">${this.formatCompactNumber(d.totalRequests || 0)}</div></div>
++      <div class="card success"><div class="card-header"><div class="card-title">成功</div></div><div class="card-value">${this.formatCompactNumber(d.successCount || 0)}</div></div>
++      <div class="card error"><div class="card-header"><div class="card-title">错误</div></div><div class="card-value">${this.formatCompactNumber(d.errorCount || 0)}</div></div>
+       <div class="card accent"><div class="card-header"><div class="card-title">成功率</div></div><div class="card-value">${d.totalRequests > 0 ? ((d.successCount/d.totalRequests)*100).toFixed(1) : 0}%</div></div>
+       <div class="card info"><div class="card-header"><div class="card-title">Token 总消耗</div></div><div class="card-value">${this._fmtTokens(totalTokens)}</div></div>
+-      <div class="card accent"><div class="card-header"><div class="card-title">Credits 总花销</div></div><div class="card-value">${totalCredits.toFixed(1)}</div></div>
++      <div class="card accent"><div class="card-header"><div class="card-title">Credits 总花销</div></div><div class="card-value">${this.formatCompactNumber(totalCredits, { digits: 1 })}</div></div>
+     `;
+     this.renderStatsCharts(d);
+
+@@ -3347,12 +4506,12 @@ const App = {
+       </div>
+       <div class="card">
+         <div class="card-header"><div class="card-title">对话池</div></div>
+-        <div class="card-value">${pool.size || 0}</div>
++        <div class="card-value">${this.formatCompactNumber(pool.size || 0)}</div>
+         <div class="card-sub">上限 ${pool.maxSize || 0} · TTL ${Math.round((pool.ttlMs || 0) / 60000)} 分钟</div>
+       </div>
+       <div class="card">
+         <div class="card-header"><div class="card-title">存储次数</div></div>
+-        <div class="card-value">${pool.stores || 0}</div>
++        <div class="card-value">${this.formatCompactNumber(pool.stores || 0)}</div>
+         <div class="card-sub">过期 ${pool.expired || 0} · 淘汰 ${pool.evictions || 0}</div>
+       </div>
+     `;
+@@ -3426,6 +4585,42 @@ const App = {
+     if (h > 0) return `${h}时 ${m}分`;
+     return `${m}分 ${Math.floor(secs % 60)}秒`;
+   },
++  fmtRemainingMs(ms) {
++    const secs = Math.max(0, Math.ceil(Number(ms || 0) / 1000));
++    if (secs >= 3600) return `${Math.floor(secs / 3600)}h ${Math.floor((secs % 3600) / 60)}m`;
++    if (secs >= 60) return `${Math.floor(secs / 60)}m ${secs % 60}s`;
++    return `${secs}s`;
++  },
++  normalizeModelLimits(a) {
++    const now = Date.now();
++    const details = Array.isArray(a.modelRateLimitDetails)
++      ? a.modelRateLimitDetails
++      : Object.entries(a.modelRateLimits || {}).map(([model, until]) => ({ model, until, remainingMs: Number(until) - now }));
++    return details
++      .map(x => ({
++        model: String(x.model || ''),
++        until: Number(x.until || 0),
++        remainingMs: Math.max(0, Number(x.remainingMs ?? (Number(x.until || 0) - now))),
++      }))
++      .filter(x => x.model && x.remainingMs > 0)
++      .sort((a, b) => a.remainingMs - b.remainingMs || a.model.localeCompare(b.model));
++  },
++  renderModelLimitChips(details, opts = {}) {
++    const max = opts.compact ? 1 : 8;
++    const items = details.slice(0, max).map(x => {
++      const title = `${x.model} 冷却到 ${new Date(x.until).toLocaleString()}`;
++      return `<span class="cooldown-chip" title="${this.esc(title)}"><span>${this.esc(x.model)}</span>${this.fmtRemainingMs(x.remainingMs)}</span>`;
++    });
++    if (opts.compact && details.length > max) {
++      items.push(`<span class="cooldown-chip" title="还有 ${details.length - max} 个模型冷却中"><span>+${details.length - max}</span></span>`);
++    }
++    return items.join('');
++  },
++  copyAccountKey(id) {
++    const key = this.accountKeyById[id];
++    if (!key) return this.toast('未找到完整 Key，请刷新账号列表', 'error');
++    return this.copyKey(key);
++  },
+   copyKey(key) {
+     const fallback = () => {
+       try {
+@@ -3452,7 +4647,10 @@ const App = {
+   esc(s) { return String(s == null ? '' : s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;'); },
+ };
+
+-window.addEventListener('DOMContentLoaded', () => App.init());
++window.addEventListener('DOMContentLoaded', () => {
++  App.init();
++  setTimeout(() => App.clearWindsurfPasswordField(), 250);
++});
+ </script>
+ </body>
+ </html>

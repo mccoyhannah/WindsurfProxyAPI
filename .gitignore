@@ -1,0 +1,37 @@
+# Dependencies and build output
+node_modules/
+dist/
+build/
+.npm-cache/
+.automation/
+
+# Local credentials and runtime state
+.env
+.env.*
+!.env.example
+config/config.yaml
+data/
+logs/
+runtime/
+usage-backups/
+
+# Vendored upstream checkout is represented by commit and patch files.
+vendor/WindsurfPoolAPI/
+
+# Temporary and generated files
+*.log
+*.tmp
+*.bak
+*.old
+*.sqlite
+*.db
+*.pb
+*.exe
+test-*.txt
+test-*.mjs
+
+# OS and editor noise
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/

@@ -33,7 +33,8 @@ function Get-WpaConfig {
     $app = Join-Path $root "app"
     Push-Location $app
     try {
-        $json = node "dist\print-config.js"
+        # Internal service scripts need real keys; direct print-config output stays redacted by default.
+        $json = node "dist\print-config.js" "--include-secrets"
         return $json | ConvertFrom-Json
     }
     finally {

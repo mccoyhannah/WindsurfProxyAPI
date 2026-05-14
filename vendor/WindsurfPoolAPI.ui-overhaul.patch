@@ -1,11 +1,8 @@
 diff --git a/src/dashboard/index.html b/src/dashboard/index.html
-index 4574796..b3132b0 100644
+index 4574796..4d43207 100644
 --- a/src/dashboard/index.html
 +++ b/src/dashboard/index.html
-@@ -6,32 +6,43 @@
- <title>WindsurfPoolAPI 控制台</title>
- <style>
- :root {
+@@ -9,22 +9,32 @@
 -  --bg: #09090b;
 -  --bg-elev: #0d0d10;
 -  --surface: #111114;
@@ -60,7 +57,7 @@ index 4574796..b3132b0 100644
 +  --rose-soft: rgba(255, 138, 160, .12);
 +  --focus-ring: 0 0 0 3px rgba(53, 208, 189, .18), 0 0 0 1px rgba(53, 208, 189, .52);
 +  --radius: 8px;
-   --radius-sm: 6px;
+@@ -32,3 +42,4 @@
 -  --radius-lg: 14px;
 -  --shadow: 0 1px 2px rgba(0,0,0,.4), 0 4px 12px rgba(0,0,0,.2);
 -  --shadow-lg: 0 10px 40px rgba(0,0,0,.4);
@@ -68,26 +65,14 @@ index 4574796..b3132b0 100644
 +  --shadow: 0 1px 0 rgba(255,255,255,.03) inset, 0 12px 26px rgba(0,12,18,.22);
 +  --shadow-lg: 0 24px 70px rgba(0,10,18,.58), 0 0 0 1px rgba(121,210,220,.08);
 +  --shadow-glow: 0 0 0 1px rgba(53,208,189,.12), 0 0 32px rgba(21,129,151,.12);
-   --font: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', system-ui, sans-serif;
-   --mono: 'JetBrains Mono', 'Cascadia Code', 'Fira Code', 'Consolas', monospace;
- }
-@@ -41,7 +52,11 @@
- html, body { height: 100%; }
- body {
-   font-family: var(--font);
+@@ -44 +55,5 @@ body {
 -  background: var(--bg);
 +  background:
 +    linear-gradient(180deg, rgba(10, 32, 43, .78) 0%, rgba(6, 16, 20, .96) 42%, var(--bg-depth) 100%),
 +    repeating-linear-gradient(118deg, rgba(53,208,189,.055) 0 1px, transparent 1px 58px),
 +    repeating-linear-gradient(64deg, rgba(91,124,250,.045) 0 1px, transparent 1px 72px),
 +    var(--bg);
-   color: var(--text);
-   font-size: 14px;
-   line-height: 1.5;
-@@ -49,19 +64,45 @@ body {
-   -moz-osx-font-smoothing: grayscale;
-   display: flex;
-   min-height: 100vh;
+@@ -51,0 +67,26 @@ body {
 +  overflow-x: hidden;
 +}
 +body::before {
@@ -114,100 +99,56 @@ index 4574796..b3132b0 100644
 +    linear-gradient(90deg, rgba(255,255,255,.028) 1px, transparent 1px);
 +  background-size: 64px 64px;
 +  mask-image: linear-gradient(180deg, transparent 0%, #000 18%, rgba(0,0,0,.45) 76%, transparent 100%);
- }
-
- /* Scrollbar */
- ::-webkit-scrollbar { width: 10px; height: 10px; }
- ::-webkit-scrollbar-track { background: transparent; }
+@@ -57,2 +98,2 @@ body {
 -::-webkit-scrollbar-thumb { background: var(--surface-3); border-radius: 5px; border: 2px solid var(--bg); }
 -::-webkit-scrollbar-thumb:hover { background: var(--border-strong); }
 +::-webkit-scrollbar-thumb { background: rgba(95,145,165,.24); border-radius: 5px; border: 2px solid var(--bg); }
 +::-webkit-scrollbar-thumb:hover { background: rgba(53,208,189,.36); }
-
- a { color: var(--accent); text-decoration: none; }
- code {
-   font-family: var(--mono);
-   font-size: 12px;
+@@ -64 +105 @@ code {
 -  background: var(--surface-2);
 +  background: rgba(5, 13, 18, .56);
-   color: var(--text);
-   padding: 2px 6px;
-   border-radius: 4px;
-@@ -71,13 +112,16 @@ code {
- /* ─── Sidebar ──────────────────────────────────── */
- .sidebar {
-   width: 232px;
+@@ -74 +115,3 @@ code {
 -  background: var(--surface);
 +  background:
 +    linear-gradient(180deg, rgba(13,31,42,.96), rgba(6,16,21,.98)),
 +    var(--surface);
-   border-right: 1px solid var(--border);
-   position: fixed;
-   top: 0; left: 0; bottom: 0;
-   display: flex;
-   flex-direction: column;
-   z-index: 10;
+@@ -80,0 +124 @@ code {
 +  box-shadow: 12px 0 34px rgba(0, 8, 12, .26);
- }
- .sidebar .brand {
-   padding: 20px 22px 18px;
-@@ -85,16 +129,17 @@ code {
-   align-items: center;
-   gap: 10px;
-   border-bottom: 1px solid var(--border);
+@@ -87,0 +132 @@ code {
 +  background: linear-gradient(180deg, rgba(53,208,189,.06), transparent);
- }
- .sidebar .brand-logo {
-   width: 32px; height: 32px;
-   border-radius: 8px;
+@@ -92 +137 @@ code {
 -  background: linear-gradient(135deg, var(--accent) 0%, #8b5cf6 100%);
 +  background: linear-gradient(135deg, var(--teal) 0%, var(--accent) 100%);
-   display: flex; align-items: center; justify-content: center;
-   font-weight: 800; color: #fff; font-size: 15px;
+@@ -95 +140 @@ code {
 -  box-shadow: 0 4px 12px rgba(99,102,241,.35);
 +  box-shadow: 0 8px 22px rgba(53,208,189,.24);
- }
+@@ -97 +142 @@ code {
 -.sidebar .brand-name { font-size: 15px; font-weight: 600; letter-spacing: -.01em; }
 +.sidebar .brand-name { font-size: 15px; font-weight: 600; letter-spacing: 0; }
- .sidebar .brand-sub { font-size: 11px; color: var(--text-dim); margin-top: 1px; }
-
- .sidebar nav { flex: 1; padding: 12px 10px; overflow-y: auto; }
-@@ -116,16 +161,22 @@ code {
-   font-size: 13px;
-   font-weight: 500;
-   border-radius: var(--radius-sm);
+@@ -119 +164 @@ code {
 -  transition: all .15s;
 +  transition: background .15s ease, color .15s ease, box-shadow .15s ease, transform .15s ease;
-   margin-bottom: 2px;
- }
+@@ -122 +167,5 @@ code {
 -.sidebar nav a:hover { color: var(--text); background: var(--surface-2); }
 +.sidebar nav a:hover {
 +  color: var(--text);
 +  background: linear-gradient(90deg, rgba(53,208,189,.12), rgba(248,207,106,.035));
 +  transform: translateX(1px);
 +}
- .sidebar nav a.active {
-   color: var(--text);
+@@ -125,2 +174,2 @@ code {
 -  background: var(--surface-3);
 -  box-shadow: inset 2px 0 0 var(--accent);
 +  background: linear-gradient(90deg, rgba(53,208,189,.16), rgba(91,124,250,.10));
 +  box-shadow: inset 2px 0 0 var(--teal), 0 0 0 1px rgba(53,208,189,.08);
- }
+@@ -128 +177,3 @@ code {
 -.sidebar nav a svg { width: 16px; height: 16px; stroke-width: 2; flex-shrink: 0; }
 +.sidebar nav a svg { width: 16px; height: 16px; stroke-width: 2; flex-shrink: 0; opacity: .82; }
 +.sidebar nav a:hover svg { color: var(--teal); opacity: 1; }
 +.sidebar nav a.active svg { color: var(--amber); opacity: 1; }
-
- .sidebar .footer {
-   padding: 12px 18px;
-@@ -142,9 +193,16 @@ code {
- .main {
-   margin-left: 232px;
-   flex: 1;
+@@ -144,0 +196,2 @@ code {
 +  width: calc(100% - 232px);
 +  min-width: 0;
-   padding: 28px 36px 40px;
-   min-height: 100vh;
+@@ -147 +200,6 @@ code {
 -  max-width: 1400px;
 +  max-width: none;
 +  background:
@@ -215,38 +156,19 @@ index 4574796..b3132b0 100644
 +    linear-gradient(180deg, rgba(255,255,255,.018), transparent 180px);
 +  position: relative;
 +  z-index: 1;
- }
- .page-header {
-   display: flex;
-@@ -157,14 +215,14 @@ code {
- .page-title {
-   font-size: 22px;
-   font-weight: 700;
+@@ -160 +218 @@ code {
 -  letter-spacing: -.02em;
 +  letter-spacing: 0;
- }
- .page-subtitle {
-   font-size: 13px;
-   color: var(--text-muted);
-   margin-top: 2px;
- }
+@@ -167 +225 @@ code {
 -.panel { display: none; animation: fadeIn .2s ease; }
 +.panel { display: none; animation: fadeIn .24s ease; }
- .panel.active { display: block; }
-
- @keyframes fadeIn {
-@@ -174,13 +232,37 @@ code {
-
- /* ─── Cards ───────────────────────────────────── */
- .card {
+@@ -177 +235,4 @@ code {
 -  background: var(--surface);
 +  position: relative;
 +  background:
 +    linear-gradient(180deg, rgba(255,255,255,.035), rgba(255,255,255,0)),
 +    var(--surface-glass);
-   border: 1px solid var(--border);
-   border-radius: var(--radius);
-   padding: 18px 20px;
+@@ -181 +242,12 @@ code {
 -  transition: border-color .15s;
 +  box-shadow: var(--shadow);
 +  transition: border-color .18s ease, box-shadow .18s ease, transform .18s ease, background .18s ease;
@@ -260,7 +182,8 @@ index 4574796..b3132b0 100644
 +  height: 1px;
 +  background: linear-gradient(90deg, transparent, rgba(255,255,255,.16), transparent);
 +  z-index: 0;
-+}
+@@ -183 +255,11 @@ code {
+-.card:hover { border-color: var(--border-strong); }
 +.card::after {
 +  content: '';
 +  position: absolute;
@@ -270,25 +193,12 @@ index 4574796..b3132b0 100644
 +  transform: rotate(-7deg);
 +  pointer-events: none;
 +  z-index: 0;
- }
--.card:hover { border-color: var(--border-strong); }
++}
 +.card:hover { border-color: var(--border-strong); box-shadow: var(--shadow-glow); transform: translateY(-2px); }
- .card-header {
-   display: flex;
-   align-items: flex-start;
-@@ -188,6 +270,8 @@ code {
-   margin-bottom: 4px;
- }
- .card-title {
+@@ -190,0 +273,2 @@ code {
 +  position: relative;
 +  z-index: 1;
-   font-size: 12px;
-   font-weight: 500;
-   color: var(--text-muted);
-@@ -195,22 +279,44 @@ code {
-   letter-spacing: .04em;
- }
- .card-icon {
+@@ -198,2 +282,10 @@ code {
 -  width: 18px; height: 18px;
 -  color: var(--text-dim);
 +  position: absolute;
@@ -301,83 +211,51 @@ index 4574796..b3132b0 100644
 +  pointer-events: none;
 +  transform: rotate(-5deg);
 +  z-index: 0;
- }
- .card-value {
+@@ -201,0 +294,2 @@ code {
 +  position: relative;
 +  z-index: 1;
-   font-size: 26px;
-   font-weight: 700;
+@@ -204 +298 @@ code {
 -  letter-spacing: -.02em;
 +  letter-spacing: 0;
-   line-height: 1.2;
-   margin-top: 6px;
+@@ -206,0 +301,7 @@ code {
 +  font-variant-numeric: tabular-nums;
 +  overflow-wrap: anywhere;
 +  text-shadow: 0 0 18px rgba(237,248,251,.06);
- }
--.card-sub { font-size: 12px; color: var(--text-muted); margin-top: 4px; }
++}
 +.card-value.compact {
 +  font-size: 20px;
 +  line-height: 1.25;
-+}
+@@ -208 +309 @@ code {
+-.card-sub { font-size: 12px; color: var(--text-muted); margin-top: 4px; }
 +.card-sub { position: relative; z-index: 1; font-size: 12px; color: var(--text-muted); margin-top: 4px; }
- .card.accent .card-value { color: var(--accent); }
- .card.success .card-value { color: var(--success); }
- .card.warn .card-value { color: var(--warn); }
- .card.error .card-value { color: var(--error); }
- .card.info .card-value { color: var(--info); }
+@@ -213,0 +315,5 @@ code {
 +.card.accent .card-icon { color: var(--accent); opacity: .14; }
 +.card.success .card-icon { color: var(--success); opacity: .13; }
 +.card.warn .card-icon { color: var(--warn); opacity: .14; }
 +.card.error .card-icon { color: var(--error); opacity: .13; }
 +.card.info .card-icon { color: var(--info); opacity: .13; }
-
- .metrics-grid {
-   display: grid;
-@@ -221,11 +327,15 @@ code {
-
- /* ─── Section Block ───────────────────────────── */
- .section {
+@@ -224 +330,3 @@ code {
 -  background: var(--surface);
 +  background:
 +    linear-gradient(180deg, rgba(255,255,255,.025), rgba(255,255,255,0) 170px),
 +    var(--surface-glass);
-   border: 1px solid var(--border);
-   border-radius: var(--radius);
-   margin-bottom: 20px;
-   overflow: hidden;
+@@ -228,0 +337,2 @@ code {
 +  box-shadow: var(--shadow);
 +  backdrop-filter: blur(14px);
- }
- .section-header {
-   padding: 16px 20px;
-@@ -239,7 +349,7 @@ code {
- .section-title {
-   font-size: 14px;
-   font-weight: 600;
+@@ -242 +352 @@ code {
 -  letter-spacing: -.01em;
 +  letter-spacing: 0;
- }
- .section-desc {
-   font-size: 12px;
-@@ -263,48 +373,59 @@ code {
-   border: 1px solid transparent;
-   border-radius: var(--radius-sm);
-   cursor: pointer;
+@@ -266,2 +376,2 @@ code {
 -  transition: all .15s;
 -  background: var(--surface-2);
 +  transition: background .15s ease, border-color .15s ease, color .15s ease, box-shadow .15s ease, transform .12s ease;
 +  background: linear-gradient(180deg, rgba(255,255,255,.035), rgba(255,255,255,0)), var(--surface-2);
-   color: var(--text);
-   white-space: nowrap;
-   line-height: 1.2;
+@@ -270,0 +381 @@ code {
 +  box-shadow: 0 1px 0 rgba(255,255,255,.035) inset;
- }
+@@ -272 +383 @@ code {
 -.btn:hover:not(:disabled) { background: var(--surface-3); border-color: var(--border-strong); }
 +.btn:hover:not(:disabled) { background: var(--surface-3); border-color: var(--border-strong); box-shadow: 0 0 0 3px rgba(53,208,189,.055); }
- .btn:active:not(:disabled) { transform: translateY(1px); }
- .btn:disabled { opacity: .5; cursor: not-allowed; }
- .btn svg { width: 14px; height: 14px; }
+@@ -275,0 +387,10 @@ code {
 +.btn:focus-visible,
 +.input:focus-visible,
 +.select:focus-visible,
@@ -388,83 +266,57 @@ index 4574796..b3132b0 100644
 +  outline: none;
 +  box-shadow: var(--focus-ring);
 +}
-
- .btn-primary {
+@@ -278 +399 @@ code {
 -  background: var(--accent);
 +  background: linear-gradient(135deg, var(--accent), #4467de);
-   color: #fff;
-   border-color: var(--accent);
+@@ -281 +402 @@ code {
 -  box-shadow: 0 1px 3px rgba(99,102,241,.3);
 +  box-shadow: 0 8px 18px rgba(91,124,250,.24);
- }
+@@ -283 +404 @@ code {
 -.btn-primary:hover:not(:disabled) { background: var(--accent-hover); border-color: var(--accent-hover); }
 +.btn-primary:hover:not(:disabled) { background: linear-gradient(135deg, var(--accent-hover), var(--accent)); border-color: var(--accent-hover); }
-
- .btn-outline {
+@@ -286 +407 @@ code {
 -  background: transparent;
 +  background: rgba(5, 16, 22, .24);
-   border-color: var(--border-strong);
-   color: var(--text);
- }
+@@ -290 +411 @@ code {
 -.btn-outline:hover:not(:disabled) { background: var(--surface-2); border-color: var(--accent); }
 +.btn-outline:hover:not(:disabled) { background: rgba(53,208,189,.08); border-color: var(--border-hot); }
-
- .btn-ghost { background: transparent; border-color: transparent; color: var(--text-muted); }
- .btn-ghost:hover:not(:disabled) { background: var(--surface-2); color: var(--text); }
-
- .btn-danger {
+@@ -296 +417 @@ code {
 -  background: var(--error);
 +  background: linear-gradient(135deg, var(--error), #cf3f5b);
-   color: #fff;
-   border-color: var(--error);
- }
+@@ -300 +421 @@ code {
 -.btn-danger:hover:not(:disabled) { background: #dc2626; border-color: #dc2626; }
 +.btn-danger:hover:not(:disabled) { background: #e85264; border-color: #e85264; }
-
- .btn-success {
+@@ -303,2 +424,2 @@ code {
 -  background: var(--success);
 -  color: #fff;
 +  background: linear-gradient(135deg, var(--success), #22bfa8);
 +  color: #062017;
-   border-color: var(--success);
- }
+@@ -307 +428 @@ code {
 -.btn-success:hover:not(:disabled) { background: #16a34a; border-color: #16a34a; }
 +.btn-success:hover:not(:disabled) { background: #52e09b; border-color: #52e09b; }
-
- .btn-sm { padding: 5px 10px; font-size: 12px; }
- .btn-xs { padding: 3px 8px; font-size: 11px; }
-@@ -326,7 +447,7 @@ code {
-   border-radius: 50%; transition: .18s;
- }
- .switch input:checked + .switch-slider {
+@@ -329 +450 @@ code {
 -  background: var(--accent); border-color: var(--accent);
 +  background: linear-gradient(135deg, var(--teal), var(--accent)); border-color: var(--border-hot);
- }
- .switch input:checked + .switch-slider::before { transform: translateX(18px); background: #fff; }
-
-@@ -337,24 +458,33 @@ code {
-   padding: 9px 12px;
-   font-size: 13px;
-   font-family: var(--font);
+@@ -340 +461 @@ code {
 -  background: var(--bg-elev);
 +  background: rgba(3, 11, 15, .58);
-   border: 1px solid var(--border);
-   border-radius: var(--radius-sm);
-   color: var(--text);
-   outline: none;
+@@ -345 +466 @@ code {
 -  transition: all .15s;
 +  transition: border-color .15s ease, box-shadow .15s ease, background .15s ease;
-   line-height: 1.35;
- }
+@@ -348 +469 @@ code {
 -.input:hover, .select:hover, .textarea:hover { border-color: var(--border-strong); }
 +.input:hover, .select:hover, .textarea:hover { border-color: var(--border-strong); background: rgba(6, 20, 27, .72); }
- .input:focus, .select:focus, .textarea:focus {
+@@ -350,2 +471,6 @@ code {
 -  border-color: var(--accent);
 -  box-shadow: 0 0 0 3px var(--accent-soft);
 +  border-color: var(--border-hot);
 +  box-shadow: 0 0 0 3px var(--teal-soft), 0 0 24px rgba(53,208,189,.08);
- }
- .input::placeholder, .textarea::placeholder { color: var(--text-dim); }
++}
++.input.invalid, .select.invalid, .textarea.invalid {
++  border-color: rgba(255,105,120,.72);
++  box-shadow: 0 0 0 3px rgba(255,105,120,.12);
+@@ -353,0 +479,9 @@ code {
 +input:-webkit-autofill,
 +input:-webkit-autofill:hover,
 +input:-webkit-autofill:focus {
@@ -474,18 +326,18 @@ index 4574796..b3132b0 100644
 +  border-color: var(--border-hot);
 +  transition: background-color 9999s ease-out, color 9999s ease-out;
 +}
-
- .select {
-   appearance: none;
+@@ -357 +491 @@ code {
 -  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23a1a1aa' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'><polyline points='6 9 12 15 18 9'/></svg>");
 +  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%239fb8c3' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'><polyline points='6 9 12 15 18 9'/></svg>");
-   background-repeat: no-repeat;
-   background-position: right 10px center;
-   padding-right: 32px;
-@@ -384,6 +514,84 @@ code {
-   gap: 8px;
-   margin-top: 14px;
-   flex-wrap: wrap;
+@@ -375,0 +510,7 @@ code {
++.field-error {
++  display: none;
++  font-size: 12px;
++  color: var(--error);
++  line-height: 1.45;
++}
++.field-error.visible { display: block; }
+@@ -386,0 +528,90 @@ code {
 +  background: linear-gradient(180deg, rgba(53,208,189,.045), rgba(255,255,255,0));
 +}
 +
@@ -550,9 +402,21 @@ index 4574796..b3132b0 100644
 +  background: var(--warn-soft);
 +  color: var(--warn);
 +}
++.wl-batch-chip.auth1 {
++  border-color: rgba(69,185,255,.28);
++  background: var(--info-soft);
++  color: var(--info);
++}
 +.wl-batch-chip span {
 +  overflow: hidden;
 +  text-overflow: ellipsis;
++  white-space: nowrap;
++}
++.wl-batch-chip small {
++  margin-left: 6px;
++  color: currentColor;
++  opacity: .78;
++  font-size: 10px;
 +  white-space: nowrap;
 +}
 +.wl-auto-add-option {
@@ -564,89 +428,38 @@ index 4574796..b3132b0 100644
 +.wl-result-table td:first-child {
 +  color: var(--text-muted);
 +  width: 120px;
- }
-
- /* Input group (prefix + input) */
-@@ -408,13 +616,13 @@ code {
-   display: flex;
-   align-items: center;
-   justify-content: center;
+@@ -411 +642 @@ code {
 -  background: var(--bg-elev);
 +  background: rgba(3, 11, 15, .62);
-   transition: all .15s;
-   flex-shrink: 0;
- }
- .checkbox input:checked + .box {
+@@ -416,2 +647,2 @@ code {
 -  background: var(--accent);
 -  border-color: var(--accent);
 +  background: var(--teal);
 +  border-color: var(--teal);
- }
- .checkbox input:checked + .box::after {
-   content: '';
-@@ -423,12 +631,12 @@ code {
-   border-width: 0 2px 2px 0;
-   transform: rotate(45deg) translateY(-1px);
- }
+@@ -426 +657 @@ code {
 -.checkbox:hover .box { border-color: var(--accent); }
 +.checkbox:hover .box { border-color: var(--border-hot); }
-
- /* Tab-style radio group */
- .segmented {
-   display: inline-flex;
+@@ -431 +662 @@ code {
 -  background: var(--bg-elev);
 +  background: rgba(3, 11, 15, .58);
-   border: 1px solid var(--border);
-   border-radius: var(--radius-sm);
-   padding: 3px;
-@@ -441,21 +649,22 @@ code {
-   color: var(--text-muted);
-   cursor: pointer;
-   border-radius: 5px;
+@@ -444 +675 @@ code {
 -  transition: all .15s;
 +  transition: background .15s ease, color .15s ease, box-shadow .15s ease;
-   position: relative;
- }
- .segmented label input { position: absolute; opacity: 0; pointer-events: none; }
- .segmented label:hover { color: var(--text); }
- .segmented label:has(input:checked) {
+@@ -450 +681 @@ code {
 -  background: var(--surface-3);
 +  background: linear-gradient(135deg, rgba(53,208,189,.16), rgba(91,124,250,.10));
-   color: var(--text);
+@@ -452 +683 @@ code {
 -  box-shadow: 0 1px 2px rgba(0,0,0,.3);
 +  box-shadow: 0 1px 2px rgba(0,0,0,.3), inset 0 0 0 1px rgba(53,208,189,.12);
- }
-
- /* ─── Tables ──────────────────────────────────── */
- .table-wrap {
-   overflow-x: auto;
-   border-radius: var(--radius);
+@@ -458,0 +690 @@ code {
 +  scrollbar-gutter: stable;
- }
- table {
-   width: 100%;
-@@ -470,7 +679,7 @@ thead th {
-   text-transform: uppercase;
-   letter-spacing: .04em;
-   color: var(--text-muted);
+@@ -473 +705 @@ thead th {
 -  background: var(--surface-2);
 +  background: rgba(12, 35, 47, .9);
-   border-bottom: 1px solid var(--border);
-   white-space: nowrap;
- }
-@@ -481,7 +690,7 @@ tbody td {
- }
- tbody tr:last-child td { border-bottom: none; }
- tbody tr { transition: background .1s; }
+@@ -484 +716 @@ tbody tr { transition: background .1s; }
 -tbody tr:hover td { background: var(--surface-2); }
 +tbody tr:hover td { background: rgba(53,208,189,.055); }
- .empty-row td {
-   text-align: center;
-   color: var(--text-dim);
-@@ -489,17 +698,298 @@ tbody tr:hover td { background: var(--surface-2); }
-   font-style: italic;
- }
-
+@@ -491,0 +724,303 @@ tbody tr:hover td { background: var(--surface-2); }
 +.account-list-wrap {
 +  width: 100%;
 +  overflow-x: hidden;
@@ -685,6 +498,11 @@ index 4574796..b3132b0 100644
 +  border-color: var(--border-strong);
 +  box-shadow: inset 2px 0 0 rgba(53,208,189,.5);
 +}
++.account-row.expanded {
++  background: linear-gradient(90deg, rgba(53,208,189,.12), rgba(19,48,63,.82));
++  border-color: var(--border-strong);
++  box-shadow: inset 3px 0 0 var(--teal), 0 0 0 1px rgba(53,208,189,.08);
++}
 +.account-row > * { min-width: 0; }
 +.account-select-cell,
 +.account-select-head {
@@ -695,7 +513,7 @@ index 4574796..b3132b0 100644
 +.account-cell {
 +  display: flex;
 +  align-items: center;
-+  gap: 8px;
++  gap: 10px;
 +  min-width: 0;
 +}
 +.account-cell .detail-toggle {
@@ -730,25 +548,40 @@ index 4574796..b3132b0 100644
 +  display: flex;
 +  flex-wrap: wrap;
 +  align-items: center;
-+  gap: 5px;
++  gap: 6px;
++  max-width: 260px;
 +}
 +.cooldown-chip {
 +  display: inline-flex;
 +  align-items: center;
-+  gap: 4px;
-+  max-width: 142px;
-+  padding: 2px 8px;
++  gap: 6px;
++  max-width: 164px;
++  min-height: 28px;
++  padding: 3px 9px;
 +  border-radius: 999px;
-+  border: 1px solid rgba(246,185,77,.28);
-+  background: var(--warn-soft);
-+  color: var(--warn);
++  border: 1px solid rgba(248,207,106,.24);
++  background: linear-gradient(135deg, rgba(248,207,106,.14), rgba(95,145,165,.055));
++  color: var(--amber);
 +  font-size: 10.5px;
 +  font-family: var(--mono);
++  box-shadow: inset 0 1px 0 rgba(255,255,255,.035);
 +}
-+.cooldown-chip span {
++.cooldown-chip .cooldown-name {
 +  overflow: hidden;
 +  text-overflow: ellipsis;
 +  white-space: nowrap;
++  min-width: 0;
++}
++.cooldown-chip .cooldown-time {
++  color: var(--text);
++  font-size: 10px;
++  font-weight: 700;
++  font-variant-numeric: tabular-nums;
++}
++.cooldown-chip.more {
++  max-width: none;
++  color: var(--text-muted);
++  background: rgba(5, 17, 24, .56);
 +}
 +.cooldown-list {
 +  display: flex;
@@ -765,30 +598,33 @@ index 4574796..b3132b0 100644
 +.account-quota-summary {
 +  display: flex;
 +  align-items: center;
-+  gap: 6px;
++  gap: 7px;
 +  flex-wrap: wrap;
 +  min-width: 0;
 +}
 +.quota-chip {
 +  display: inline-flex;
 +  align-items: center;
-+  gap: 5px;
-+  max-width: 92px;
-+  padding: 3px 8px;
-+  border: 1px solid var(--border);
++  justify-content: space-between;
++  gap: 6px;
++  min-width: 78px;
++  max-width: 108px;
++  padding: 4px 9px;
++  border: 1px solid rgba(95,145,165,.2);
 +  border-radius: 999px;
-+  background: rgba(5, 17, 24, .54);
++  background: rgba(5, 17, 24, .46);
 +  color: var(--text-muted);
 +  font-size: 11px;
 +  white-space: nowrap;
++  box-shadow: inset 0 1px 0 rgba(255,255,255,.025);
 +}
 +.quota-chip strong {
 +  color: var(--success);
 +  font-variant-numeric: tabular-nums;
 +}
-+.quota-chip.warn { background: var(--warn-soft); border-color: rgba(246,185,77,.26); }
++.quota-chip.warn { background: rgba(246,185,77,.105); border-color: rgba(246,185,77,.26); }
 +.quota-chip.warn strong { color: var(--warn, #f59e0b); }
-+.quota-chip.error { background: var(--error-soft); border-color: rgba(255,105,120,.28); }
++.quota-chip.error { background: rgba(255,105,120,.105); border-color: rgba(255,105,120,.28); }
 +.quota-chip.error strong { color: var(--error); }
 +.account-model-summary .btn { min-width: 88px; }
 +.account-row-actions {
@@ -927,69 +763,60 @@ index 4574796..b3132b0 100644
 +}
 +.batch-spacer { flex: 1 1 120px; }
 +
- /* ─── Badges ──────────────────────────────────── */
- .badge {
-   display: inline-flex;
-   align-items: center;
-   gap: 4px;
+@@ -497 +1032 @@ tbody tr:hover td { background: var(--surface-2); }
 -  padding: 2px 8px;
 +  padding: 2px 9px;
-   border-radius: 999px;
-   font-size: 11px;
-   font-weight: 600;
-   line-height: 1.5;
+@@ -502 +1037,2 @@ tbody tr:hover td { background: var(--surface-2); }
 -  border: 1px solid transparent;
 +  border: 1px solid rgba(255,255,255,.04);
 +  background: rgba(5, 17, 24, .42);
- }
- .badge::before {
-   content: '';
-@@ -507,13 +997,21 @@ tbody tr:hover td { background: var(--surface-2); }
-   border-radius: 50%;
-   background: currentColor;
- }
+@@ -509,0 +1046,6 @@ tbody tr:hover td { background: var(--surface-2); }
 +.badge.active::before,
 +.badge.running::before,
 +.badge.success::before,
 +.badge.info::before {
 +  animation: statusPulse 1.9s ease-in-out infinite;
 +}
- .badge.active, .badge.running, .badge.success {
-   background: var(--success-soft);
-   color: var(--success);
+@@ -512,0 +1055 @@ tbody tr:hover td { background: var(--surface-2); }
 +  border-color: rgba(69,212,131,.24);
- }
- .badge.error, .badge.stopped {
-   background: var(--error-soft);
-   color: var(--error);
+@@ -516,0 +1060 @@ tbody tr:hover td { background: var(--surface-2); }
 +  border-color: rgba(255,105,120,.25);
- }
- .badge.disabled, .badge.muted {
-   background: var(--surface-3);
-@@ -522,10 +1020,12 @@ tbody tr:hover td { background: var(--surface-2); }
- .badge.warn {
-   background: var(--warn-soft);
-   color: var(--warn);
+@@ -524,0 +1069,6 @@ tbody tr:hover td { background: var(--surface-2); }
 +  border-color: rgba(246,185,77,.25);
- }
- .badge.info, .badge.pro {
-   background: var(--info-soft);
-   color: var(--info);
++}
++.badge.paused {
++  background: var(--amber-soft);
++  color: var(--amber);
++  border-color: rgba(248,207,106,.28);
+@@ -528,0 +1079 @@ tbody tr:hover td { background: var(--surface-2); }
 +  border-color: rgba(69,185,255,.25);
- }
- .badge.no-dot::before { display: none; }
-
-@@ -534,16 +1034,16 @@ tbody tr:hover td { background: var(--surface-2); }
-   display: inline-flex;
-   align-items: center;
-   padding: 2px 10px;
+@@ -531,0 +1083,22 @@ tbody tr:hover td { background: var(--surface-2); }
++.log-level-tags {
++  display: inline-flex;
++  flex-wrap: wrap;
++  gap: 6px;
++}
++.log-level-tag {
++  border: 1px solid var(--border);
++  background: var(--surface);
++  color: var(--text-muted);
++  border-radius: 999px;
++  padding: 6px 10px;
++  font-family: var(--mono);
++  font-size: 11px;
++  font-weight: 700;
++  cursor: pointer;
++}
++.log-level-tag.active {
++  border-color: var(--border-hot);
++  background: var(--teal-soft);
++  color: var(--teal);
++}
++
+@@ -537 +1110 @@ tbody tr:hover td { background: var(--surface-2); }
 -  border-radius: 5px;
 +  border-radius: 999px;
-   font-size: 11px;
-   font-weight: 700;
-   text-transform: uppercase;
-   letter-spacing: .04em;
- }
+@@ -543,4 +1116,4 @@ tbody tr:hover td { background: var(--surface-2); }
 -.tier.pro { background: linear-gradient(135deg, #6366f1, #8b5cf6); color: #fff; }
 -.tier.free { background: var(--info-soft); color: var(--info); }
 -.tier.expired { background: var(--error-soft); color: var(--error); }
@@ -998,55 +825,57 @@ index 4574796..b3132b0 100644
 +.tier.free { background: var(--info-soft); color: var(--info); border: 1px solid rgba(69,185,255,.22); }
 +.tier.expired { background: var(--error-soft); color: var(--error); border: 1px solid rgba(255,105,120,.22); }
 +.tier.unknown { background: var(--surface-3); color: var(--text-muted); border: 1px solid var(--border); }
-
- /* ─── LS Pool Cards ───────────────────────────── */
- .ls-pool {
-@@ -553,11 +1053,13 @@ tbody tr:hover td { background: var(--surface-2); }
- }
- .ls-inst {
-   padding: 14px 16px;
+@@ -556 +1129 @@ tbody tr:hover td { background: var(--surface-2); }
 -  background: var(--bg-elev);
 +  background: linear-gradient(180deg, rgba(53,208,189,.045), rgba(255,255,255,0)), var(--bg-elev);
-   border: 1px solid var(--border);
-   border-radius: var(--radius-sm);
-   font-size: 12px;
+@@ -559,0 +1133,9 @@ tbody tr:hover td { background: var(--surface-2); }
 +  transition: border-color .16s ease, transform .16s ease, box-shadow .16s ease;
- }
++}
++.ls-inst.stopped {
++  background: var(--surface);
++  opacity: .82;
++}
++.ls-inst.paused {
++  border-color: rgba(248,207,106,.24);
++  background: linear-gradient(180deg, rgba(248,207,106,.055), rgba(255,255,255,0)), var(--surface);
+@@ -560,0 +1143 @@ tbody tr:hover td { background: var(--surface-2); }
 +.ls-inst:hover { border-color: var(--border-strong); transform: translateY(-1px); box-shadow: var(--shadow-glow); }
- .ls-inst .ls-key {
-   font-weight: 600;
-   color: var(--text);
-@@ -572,6 +1074,7 @@ tbody tr:hover td { background: var(--surface-2); }
-   border-radius: 50%;
-   background: var(--success);
-   box-shadow: 0 0 8px var(--success);
+@@ -574,0 +1158 @@ tbody tr:hover td { background: var(--surface-2); }
 +  animation: statusPulse 1.9s ease-in-out infinite;
- }
- .ls-inst .ls-dot.pending { background: var(--warn); box-shadow: 0 0 8px var(--warn); }
- .ls-inst .ls-meta { color: var(--text-dim); font-family: var(--mono); font-size: 11px; margin-top: 2px; }
-@@ -588,23 +1091,25 @@ tbody tr:hover td { background: var(--surface-2); }
-   align-items: center;
-   gap: 6px;
-   padding: 5px 11px;
+@@ -576,0 +1161,2 @@ tbody tr:hover td { background: var(--surface-2); }
++.ls-inst .ls-dot.paused { background: var(--amber); box-shadow: 0 0 8px rgba(248,207,106,.45); animation: none; }
++.ls-inst .ls-dot.stopped { background: var(--text-dim); box-shadow: none; animation: none; }
+@@ -577,0 +1164,15 @@ tbody tr:hover td { background: var(--surface-2); }
++.ls-inst .ls-badges {
++  display: flex;
++  flex-wrap: wrap;
++  gap: 6px;
++  margin: 8px 0;
++}
++.ls-inst .ls-actions {
++  display: flex;
++  flex-wrap: wrap;
++  gap: 8px;
++  margin-top: 12px;
++}
++.ls-inst .ls-actions .btn {
++  min-height: 30px;
++}
+@@ -591 +1192 @@ tbody tr:hover td { background: var(--surface-2); }
 -  border-radius: 6px;
 +  border-radius: 999px;
-   font-size: 12px;
-   border: 1px solid var(--border);
+@@ -594 +1195 @@ tbody tr:hover td { background: var(--surface-2); }
 -  background: var(--bg-elev);
 +  background: rgba(3, 11, 15, .58);
-   color: var(--text-muted);
-   cursor: pointer;
+@@ -597 +1198 @@ tbody tr:hover td { background: var(--surface-2); }
 -  transition: all .15s;
 +  transition: background .15s ease, border-color .15s ease, color .15s ease, transform .15s ease, box-shadow .15s ease;
-   font-weight: 500;
- }
- .model-chip:hover {
+@@ -601 +1202 @@ tbody tr:hover td { background: var(--surface-2); }
 -  border-color: var(--accent);
 +  border-color: var(--border-hot);
-   color: var(--text);
+@@ -602,0 +1204 @@ tbody tr:hover td { background: var(--surface-2); }
 +  transform: translateY(-1px);
- }
- .model-chip.selected {
+@@ -605,3 +1207,4 @@ tbody tr:hover td { background: var(--surface-2); }
 -  background: var(--accent-soft);
 -  border-color: var(--accent);
 -  color: var(--accent);
@@ -1054,47 +883,21 @@ index 4574796..b3132b0 100644
 +  border-color: var(--border-hot);
 +  color: var(--text);
 +  box-shadow: 0 0 0 1px rgba(53,208,189,.08);
- }
- .model-chip .remove {
-   color: var(--error);
-@@ -667,10 +1172,11 @@ tbody tr:hover td { background: var(--surface-2); }
- /* ─── Chart ───────────────────────────────────── */
- .chart {
-   padding: 20px;
+@@ -670 +1273 @@ tbody tr:hover td { background: var(--surface-2); }
 -  background: var(--surface);
 +  background: linear-gradient(180deg, rgba(255,255,255,.025), rgba(255,255,255,0)), var(--surface);
-   border: 1px solid var(--border);
-   border-radius: var(--radius);
-   margin-bottom: 20px;
+@@ -673,0 +1277 @@ tbody tr:hover td { background: var(--surface-2); }
 +  box-shadow: var(--shadow);
- }
- .chart h3 { font-size: 14px; font-weight: 600; margin-bottom: 16px; }
- .bars {
-@@ -691,7 +1197,7 @@ tbody tr:hover td { background: var(--surface-2); }
- .bar {
-   width: 100%;
-   min-width: 6px;
+@@ -694 +1298 @@ tbody tr:hover td { background: var(--surface-2); }
 -  background: linear-gradient(to top, var(--accent), var(--accent-hover));
 +  background: linear-gradient(to top, var(--teal), var(--accent-hover));
-   border-radius: 3px 3px 0 0;
-   transition: height .4s cubic-bezier(.4,0,.2,1);
- }
-@@ -719,9 +1225,9 @@ tbody tr:hover td { background: var(--surface-2); }
- }
- .toast {
-   padding: 12px 18px;
+@@ -722 +1326 @@ tbody tr:hover td { background: var(--surface-2); }
 -  border-radius: var(--radius-sm);
 +  border-radius: var(--radius);
-   font-size: 13px;
+@@ -724 +1328 @@ tbody tr:hover td { background: var(--surface-2); }
 -  background: var(--surface);
 +  background: linear-gradient(180deg, rgba(255,255,255,.04), rgba(255,255,255,0)), rgba(9, 24, 32, .94);
-   border: 1px solid var(--border);
-   box-shadow: var(--shadow-lg);
-   animation: slideIn .25s ease;
-@@ -731,9 +1237,10 @@ tbody tr:hover td { background: var(--surface-2); }
-   align-items: center;
-   gap: 10px;
- }
+@@ -734,3 +1338,4 @@ tbody tr:hover td { background: var(--surface-2); }
 -.toast.success { border-left: 3px solid var(--success); }
 -.toast.error { border-left: 3px solid var(--error); }
 -.toast.info { border-left: 3px solid var(--info); }
@@ -1102,190 +905,259 @@ index 4574796..b3132b0 100644
 +.toast.error { border-left: 3px solid var(--error); box-shadow: var(--shadow-lg), 0 0 26px rgba(255,105,120,.10); }
 +.toast.info { border-left: 3px solid var(--info); box-shadow: var(--shadow-lg), 0 0 26px rgba(69,185,255,.10); }
 +.toast.warn { border-left: 3px solid var(--warn); box-shadow: var(--shadow-lg), 0 0 26px rgba(246,185,77,.10); }
- @keyframes slideIn {
-   from { opacity: 0; transform: translateX(20px); }
-   to { opacity: 1; transform: translateX(0); }
-@@ -743,8 +1250,8 @@ tbody tr:hover td { background: var(--surface-2); }
- .modal-overlay {
-   position: fixed;
-   inset: 0;
+@@ -746,2 +1351,2 @@ tbody tr:hover td { background: var(--surface-2); }
 -  background: rgba(0,0,0,.7);
 -  backdrop-filter: blur(4px);
 +  background: rgba(1, 8, 12, .74);
 +  backdrop-filter: blur(8px);
-   display: flex;
-   align-items: center;
-   justify-content: center;
-@@ -752,8 +1259,10 @@ tbody tr:hover td { background: var(--surface-2); }
-   animation: fadeIn .15s ease;
- }
- .modal {
+@@ -755,2 +1360,4 @@ tbody tr:hover td { background: var(--surface-2); }
 -  background: var(--surface);
 -  border: 1px solid var(--border);
 +  background:
 +    linear-gradient(180deg, rgba(53,208,189,.06), rgba(255,255,255,0) 120px),
 +    var(--surface);
 +  border: 1px solid var(--border-strong);
-   border-radius: var(--radius-lg);
-   width: 90%;
-   max-width: 440px;
-@@ -773,7 +1282,7 @@ tbody tr:hover td { background: var(--surface-2); }
- .modal-body { padding: 12px 24px 20px; }
- .modal-footer {
-   padding: 14px 24px;
+@@ -776 +1383 @@ tbody tr:hover td { background: var(--surface-2); }
 -  background: var(--surface-2);
 +  background: rgba(5, 17, 24, .48);
-   display: flex;
-   justify-content: flex-end;
-   gap: 8px;
-@@ -784,15 +1293,15 @@ tbody tr:hover td { background: var(--surface-2); }
- .login-overlay {
-   position: fixed;
-   inset: 0;
+@@ -787 +1394 @@ tbody tr:hover td { background: var(--surface-2); }
 -  background: radial-gradient(ellipse at center, rgba(99,102,241,.08) 0%, var(--bg) 70%);
 +  background: radial-gradient(ellipse at center, rgba(53,208,189,.10) 0%, var(--bg) 70%);
-   display: flex;
-   align-items: center;
-   justify-content: center;
-   z-index: 200;
- }
- .login-box {
+@@ -794,2 +1401,2 @@ tbody tr:hover td { background: var(--surface-2); }
 -  background: var(--surface);
 -  border: 1px solid var(--border);
 +  background: linear-gradient(180deg, rgba(255,255,255,.035), rgba(255,255,255,0)), var(--surface);
 +  border: 1px solid var(--border-strong);
-   border-radius: var(--radius-lg);
-   padding: 36px 32px;
-   width: 380px;
-@@ -802,10 +1311,10 @@ tbody tr:hover td { background: var(--surface-2); }
-   width: 56px; height: 56px;
-   margin: 0 auto 18px;
-   border-radius: 14px;
+@@ -805 +1412 @@ tbody tr:hover td { background: var(--surface-2); }
 -  background: linear-gradient(135deg, var(--accent) 0%, #8b5cf6 100%);
 +  background: linear-gradient(135deg, var(--teal) 0%, var(--accent) 100%);
-   display: flex; align-items: center; justify-content: center;
-   font-weight: 800; font-size: 22px; color: #fff;
+@@ -808 +1415 @@ tbody tr:hover td { background: var(--surface-2); }
 -  box-shadow: 0 10px 30px rgba(99,102,241,.35);
 +  box-shadow: 0 10px 30px rgba(53,208,189,.28);
- }
- .login-box h3 { text-align: center; font-size: 18px; margin-bottom: 8px; }
- .login-box p { text-align: center; font-size: 13px; color: var(--text-muted); margin-bottom: 22px; }
-@@ -824,6 +1333,11 @@ tbody tr:hover td { background: var(--surface-2); }
- }
- @keyframes spin { to { transform: rotate(360deg); } }
-
+@@ -826,0 +1434,5 @@ tbody tr:hover td { background: var(--surface-2); }
 +@keyframes statusPulse {
 +  0%, 100% { opacity: .72; box-shadow: 0 0 0 0 currentColor; }
 +  50% { opacity: 1; box-shadow: 0 0 0 4px rgba(53,208,189,0); }
 +}
 +
- /* ─── Capability Markers ──────────────────────── */
- .cap-list { display: inline-flex; flex-wrap: wrap; gap: 4px; }
- .cap-item {
-@@ -854,21 +1368,16 @@ tbody tr:hover td { background: var(--surface-2); }
- }
- .expand-chevron:hover, .detail-toggle:hover {
-   color: var(--text);
+@@ -839 +1451 @@ tbody tr:hover td { background: var(--surface-2); }
+-.expand-chevron, .detail-toggle {
++.expand-chevron {
+@@ -855 +1467,23 @@ tbody tr:hover td { background: var(--surface-2); }
+-.expand-chevron:hover, .detail-toggle:hover {
++.detail-toggle {
++  display: inline-grid;
++  place-items: center;
++  width: 30px;
++  height: 30px;
++  flex: 0 0 30px;
++  border-radius: 8px;
++  border: 1px solid rgba(53,208,189,.24);
++  background:
++    linear-gradient(180deg, rgba(53,208,189,.13), rgba(53,208,189,.035)),
++    rgba(5, 17, 24, .66);
++  color: var(--teal);
++  cursor: pointer;
++  box-shadow: inset 0 1px 0 rgba(255,255,255,.045), 0 0 0 1px rgba(0,0,0,.10);
++  transition: transform .16s ease, background .16s ease, border-color .16s ease, color .16s ease, box-shadow .16s ease;
++}
++.detail-toggle svg {
++  width: 15px;
++  height: 15px;
++  stroke-width: 2.4;
++  transition: transform .16s ease;
++}
++.expand-chevron:hover {
+@@ -857,2 +1491,2 @@ tbody tr:hover td { background: var(--surface-2); }
 -  background: var(--surface-2);
 -  border-color: var(--border);
 +  background: rgba(53,208,189,.08);
 +  border-color: var(--border-strong);
- }
- .expand-chevron.open, .detail-toggle.open {
+@@ -860,2 +1494,11 @@ tbody tr:hover td { background: var(--surface-2); }
+-.expand-chevron.open, .detail-toggle.open {
 -  color: var(--accent);
++.detail-toggle:hover {
++  color: #dffdfa;
++  background:
++    linear-gradient(180deg, rgba(53,208,189,.23), rgba(91,124,250,.10)),
++    rgba(7, 26, 35, .88);
++  border-color: rgba(53,208,189,.56);
++  box-shadow: 0 0 0 3px rgba(53,208,189,.08), 0 8px 22px rgba(0, 18, 26, .22);
++  transform: translateY(-1px);
++}
++.expand-chevron.open {
 +  color: var(--teal);
-   transform: rotate(90deg);
- }
+@@ -864,4 +1507,8 @@ tbody tr:hover td { background: var(--surface-2); }
 -.account-detail-row > td {
 -  padding: 0 !important;
 -  background: #0d0d10 !important;
 -  border-bottom: 1px solid var(--border) !important;
--}
- .account-detail-wrap {
-   padding: 18px 24px;
++.detail-toggle.open {
++  color: #061014;
++  background: linear-gradient(135deg, var(--teal), var(--amber));
++  border-color: rgba(248,207,106,.42);
++  box-shadow: 0 0 0 3px rgba(53,208,189,.10), 0 0 20px rgba(53,208,189,.16);
++}
++.detail-toggle.open svg {
++  transform: rotate(90deg);
+@@ -871 +1518,12 @@ tbody tr:hover td { background: var(--surface-2); }
 -  background: linear-gradient(180deg, rgba(99,102,241,.04), transparent 80%);
 +  background: linear-gradient(180deg, rgba(53,208,189,.06), transparent 80%);
- }
- .detail-grid, .account-detail-grid {
-   display: grid;
-@@ -876,10 +1385,11 @@ tbody tr:hover td { background: var(--surface-2); }
-   gap: 14px;
- }
- .detail-card, .account-detail-card {
++}
++.account-detail-main {
++  display: grid;
++  grid-template-columns: minmax(300px, .95fr) minmax(420px, 1.35fr);
++  align-items: start;
++  gap: 14px;
++}
++.account-detail-side {
++  display: grid;
++  gap: 14px;
++  align-content: start;
+@@ -879 +1537 @@ tbody tr:hover td { background: var(--surface-2); }
 -  background: var(--surface);
 +  background: rgba(13, 27, 36, .78);
-   border: 1px solid var(--border);
-   border-radius: var(--radius);
-   padding: 14px 16px;
+@@ -882,0 +1541,2 @@ tbody tr:hover td { background: var(--surface-2); }
 +  box-shadow: 0 1px 0 rgba(255,255,255,.025) inset;
- }
- .detail-card.full, .account-detail-card.full, .account-detail-models { grid-column: 1 / -1; }
- .detail-card-head, .account-detail-title {
-@@ -897,8 +1407,9 @@ tbody tr:hover td { background: var(--surface-2); }
-   width: 6px;
-   height: 6px;
-   border-radius: 50%;
++  align-self: start;
+@@ -884,0 +1545 @@ tbody tr:hover td { background: var(--surface-2); }
++.account-detail-main + .account-detail-models { margin-top: 14px; }
+@@ -900,2 +1561,3 @@ tbody tr:hover td { background: var(--surface-2); }
 -  background: var(--accent);
 -  box-shadow: 0 0 6px var(--accent);
 +  background: var(--teal);
 +  box-shadow: 0 0 6px var(--teal);
 +  animation: statusPulse 1.9s ease-in-out infinite;
- }
- .detail-kv, .account-detail-kv {
-   display: grid;
-@@ -928,7 +1439,7 @@ tbody tr:hover td { background: var(--surface-2); }
- .detail-bar .bar-track, .account-detail-bar {
-   height: 7px;
-   border-radius: 4px;
+@@ -931 +1593 @@ tbody tr:hover td { background: var(--surface-2); }
 -  background: var(--surface-2);
 +  background: rgba(3, 11, 15, .58);
-   overflow: hidden;
-   border: 1px solid var(--border);
- }
-@@ -993,7 +1504,7 @@ tbody tr:hover td { background: var(--surface-2); }
-   padding: 6px 9px;
-   border-radius: 6px;
-   border: 1px solid var(--border);
+@@ -952,0 +1615,107 @@ tbody tr:hover td { background: var(--surface-2); }
++.account-token-line {
++  grid-column: 1 / -1;
++  display: grid;
++  grid-template-columns: 96px minmax(0, 1fr) auto;
++  align-items: center;
++  gap: 6px 12px;
++  margin: 3px 0;
++}
++.account-token-mask {
++  min-width: 0;
++  overflow: hidden;
++  text-overflow: ellipsis;
++  white-space: nowrap;
++  color: var(--teal);
++  background: rgba(3, 11, 15, .52);
++  border: 1px solid var(--border);
++  border-radius: var(--radius-sm);
++  padding: 4px 8px;
++  font-family: var(--mono);
++  font-size: 11.5px;
++}
++.account-token-copy {
++  min-height: 26px;
++  padding-inline: 10px;
++}
++.account-detail-quota {
++  display: block;
++  margin: 10px 0 0;
++  padding: 10px 12px;
++  border: 1px solid rgba(95,145,165,.18);
++  border-radius: var(--radius-sm);
++  background: rgba(5, 17, 24, .36);
++}
++.account-detail-quota-head {
++  display: flex;
++  align-items: baseline;
++  justify-content: space-between;
++  gap: 12px;
++  margin-bottom: 8px;
++}
++.account-detail-quota-label {
++  color: var(--text-muted);
++  font-size: 12px;
++  font-weight: 600;
++}
++.account-detail-quota-pct {
++  font-family: var(--mono);
++  font-size: 13px;
++  font-weight: 800;
++  color: var(--success);
++  font-variant-numeric: tabular-nums;
++}
++.account-detail-quota.warn .account-detail-quota-pct { color: var(--warn); }
++.account-detail-quota.error .account-detail-quota-pct { color: var(--error); }
++.account-detail-quota-track {
++  height: 8px;
++  border-radius: 999px;
++  overflow: hidden;
++  border: 1px solid var(--border);
++  background: rgba(3, 11, 15, .68);
++}
++.account-detail-quota-fill {
++  display: block;
++  height: 100%;
++  border-radius: inherit;
++  background: linear-gradient(90deg, var(--teal), var(--success));
++}
++.account-detail-quota.warn .account-detail-quota-fill { background: linear-gradient(90deg, var(--warn), var(--amber)); }
++.account-detail-quota.error .account-detail-quota-fill { background: linear-gradient(90deg, var(--error), var(--rose)); }
++.account-detail-quota-reset {
++  margin-top: 6px;
++  color: var(--text-dim);
++  font-family: var(--mono);
++  font-size: 10.5px;
++}
++.runtime-grid {
++  display: grid;
++  grid-template-columns: repeat(2, minmax(0, 1fr));
++  gap: 8px;
++  margin-top: 10px;
++}
++.runtime-metric,
++.runtime-ls {
++  min-width: 0;
++  padding: 10px 12px;
++  border: 1px solid rgba(95,145,165,.18);
++  border-radius: var(--radius-sm);
++  background: rgba(5, 17, 24, .34);
++}
++.runtime-ls { grid-column: 1 / -1; }
++.runtime-label {
++  color: var(--text-dim);
++  font-size: 10.5px;
++  margin-bottom: 4px;
++}
++.runtime-value {
++  color: var(--text);
++  font-weight: 700;
++  font-variant-numeric: tabular-nums;
++}
++.runtime-sub {
++  margin-top: 4px;
++  color: var(--text-dim);
++  font-family: var(--mono);
++  font-size: 10.5px;
++  overflow-wrap: anywhere;
++}
+@@ -996 +1765 @@ tbody tr:hover td { background: var(--surface-2); }
 -  background: var(--bg-elev);
 +  background: rgba(3, 11, 15, .58);
-   min-width: 0;
- }
- .account-detail-model-chip.blocked {
-@@ -1005,6 +1516,7 @@ tbody tr:hover td { background: var(--surface-2); }
-   height: 7px;
-   border-radius: 50%;
-   background: var(--success);
+@@ -1007,0 +1777 @@ tbody tr:hover td { background: var(--surface-2); }
 +  animation: statusPulse 1.9s ease-in-out infinite;
- }
- .account-detail-model-chip.blocked .chip-dot { background: var(--error); }
- .account-detail-model-chip .chip-name {
-@@ -1016,9 +1528,9 @@ tbody tr:hover td { background: var(--surface-2); }
- }
- .account-detail-model-chip .chip-cost {
-   font-size: 10px;
+@@ -1019,3 +1789,3 @@ tbody tr:hover td { background: var(--surface-2); }
 -  color: var(--accent);
 -  background: var(--accent-soft);
 -  border: 1px solid rgba(99,102,241,.25);
 +  color: var(--teal);
 +  background: var(--teal-soft);
 +  border: 1px solid rgba(53,208,189,.25);
-   border-radius: 999px;
-   padding: 1px 6px;
- }
-@@ -1177,14 +1689,130 @@ tbody tr:hover td { background: var(--surface-2); }
- .break-all { word-break: break-all; }
-
- /* ─── Responsive ──────────────────────────────── */
+@@ -1180 +1950 @@ tbody tr:hover td { background: var(--surface-2); }
 -@media (max-width: 900px) {
 +@media (max-width: 1100px) {
-   .sidebar { width: 60px; }
-   .sidebar .brand-name, .sidebar .brand-sub, .sidebar nav a span, .sidebar .footer .ver, .sidebar .nav-group-label { display: none; }
-   .sidebar .brand { justify-content: center; padding: 20px 0; }
-   .sidebar nav a { justify-content: center; padding: 10px; }
+@@ -1185 +1955 @@ tbody tr:hover td { background: var(--surface-2); }
 -  .main { margin-left: 60px; padding: 20px 16px; }
 +  .main { margin-left: 60px; width: calc(100% - 60px); padding: 20px 16px; }
-   .detail-grid, .chart-grid, .chart-pie-body { grid-template-columns: 1fr; }
-   .chart-pie-body canvas { margin: 0 auto; }
+@@ -1187,0 +1958,136 @@ tbody tr:hover td { background: var(--surface-2); }
 +  .account-list-head { display: none; }
 +  .account-row {
 +    grid-template-columns: 34px minmax(0, 1fr) minmax(96px, auto);
@@ -1301,7 +1173,8 @@ index 4574796..b3132b0 100644
 +  .account-state { grid-area: state; }
 +  .account-snapshot { grid-area: snapshot; }
 +  .account-row-actions { grid-area: actions; }
-+  .account-detail-grid { grid-template-columns: 1fr; }
++  .account-detail-grid,
++  .account-detail-main { grid-template-columns: 1fr; }
 +}
 +@media (max-width: 640px) {
 +  .section-header { align-items: flex-start; }
@@ -1371,8 +1244,27 @@ index 4574796..b3132b0 100644
 +  .account-detail-actions .btn {
 +    flex: 1 1 86px;
 +  }
++  .detail-toggle {
++    width: 28px;
++    height: 28px;
++    flex-basis: 28px;
++  }
++  .detail-toggle svg {
++    width: 14px;
++    height: 14px;
++  }
 +  .account-detail-kv {
 +    grid-template-columns: 78px minmax(0, 1fr);
++  }
++  .account-token-line {
++    grid-template-columns: 78px minmax(0, 1fr);
++  }
++  .account-token-copy {
++    grid-column: 2;
++    justify-self: start;
++  }
++  .runtime-grid {
++    grid-template-columns: 1fr;
 +  }
 +  .account-detail-kv strong,
 +  .account-detail-kv code {
@@ -1402,13 +1294,7 @@ index 4574796..b3132b0 100644
 +    scroll-behavior: auto !important;
 +    transition-duration: .001ms !important;
 +  }
- }
- </style>
- </head>
-@@ -1192,8 +1820,13 @@ tbody tr:hover td { background: var(--surface-2); }
-
- <!-- ════════ Sidebar ════════ -->
- <aside class="sidebar">
+@@ -1195,2 +2101,7 @@ tbody tr:hover td { background: var(--surface-2); }
 -  <div class="brand">
 -    <div class="brand-logo">W</div>
 +    <div class="brand">
@@ -1418,35 +1304,28 @@ index 4574796..b3132b0 100644
 +        <path d="M4 12.5c3.6-3 6.6-3 10.2 0s6.6 3 10.2 0c1.2-1 2.4-1.7 3.6-2" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" opacity=".58"/>
 +      </svg>
 +    </div>
-     <div>
-       <div class="brand-name">WindsurfPoolAPI</div>
-       <div class="brand-sub">管理控制台</div>
-@@ -1285,25 +1918,51 @@ tbody tr:hover td { background: var(--surface-2); }
-     <div class="page-header">
-       <div>
-         <h1 class="page-title">登录取号</h1>
+@@ -1272 +2183 @@ tbody tr:hover td { background: var(--surface-2); }
+-        <button class="btn btn-outline btn-sm" onclick="App.restartLs()">
++        <button class="btn btn-outline btn-sm" onclick="App.loadOverview()">
+@@ -1274 +2185 @@ tbody tr:hover td { background: var(--surface-2); }
+-          重启
++          刷新
+@@ -1288 +2199 @@ tbody tr:hover td { background: var(--surface-2); }
 -        <div class="page-subtitle">使用账号密码登录 Windsurf 获取 API Key 并加入账号池</div>
 +        <div class="page-subtitle">使用账号密码登录 Windsurf 获取本地可用凭据并加入账号池</div>
-       </div>
-     </div>
-     <div class="section">
-       <div class="section-header">
-         <div>
-           <div class="section-title">账号凭据</div>
+@@ -1295 +2206 @@ tbody tr:hover td { background: var(--surface-2); }
 -          <div class="section-desc">每次登录使用随机浏览器指纹</div>
 +          <div class="section-desc">支持邮箱密码，也可直接粘贴单条或多行卡密，系统会自动识别并按行加入账号池</div>
-         </div>
-       </div>
-       <div class="section-body">
+@@ -1298,0 +2210,26 @@ tbody tr:hover td { background: var(--surface-2); }
 +        <div class="login-card-import">
 +          <div class="login-card-import-head">
 +            <div>
 +              <div class="login-card-import-title">整条卡密 / 批量卡密</div>
-+              <div class="login-card-import-desc">每行一条：邮箱----密码----session token。多行会顺序登录；token 只保留在这里，不会在本页登录时使用。</div>
++              <div class="login-card-import-desc">每行一条：邮箱----密码----session token，或邮箱----auth1_短期令牌----时间。Auth1 会先换成 session token 再入池。</div>
 +            </div>
 +            <span class="badge info no-dot" id="wl-card-mode">自动识别</span>
 +          </div>
-+          <textarea id="wl-card" class="textarea wl-card-textarea" rows="5" placeholder="your-email1@example.com----你的密码1----session token&#10;your-email2@example.com----你的密码2----session token" autocomplete="off" spellcheck="false" autocapitalize="off" oninput="App.updateWindsurfCardStatus()"></textarea>
++          <textarea id="wl-card" class="textarea wl-card-textarea" rows="5" placeholder="your-email1@example.com----你的密码1----session token&#10;your-email2@example.com----auth1_短期令牌----2026-05-14 04:10:02" autocomplete="off" spellcheck="false" autocapitalize="off" oninput="App.updateWindsurfCardStatus()"></textarea>
 +          <div id="wl-batch-preview" class="wl-batch-preview hidden"></div>
 +          <div class="field-row-actions wl-card-actions">
 +            <button class="btn btn-outline btn-sm" onclick="App.applyWindsurfCard()">
@@ -1455,7 +1334,7 @@ index 4574796..b3132b0 100644
 +            </button>
 +            <button class="btn btn-success btn-sm" onclick="App.windsurfBatchLogin()" id="wl-batch-btn">
 +              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
-+              批量登录入池
++              批量登录/换票入池
 +            </button>
 +            <button class="btn btn-ghost btn-sm" onclick="App.clearWindsurfCard()">
 +              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"><path d="M3 6h18"/><path d="M8 6V4h8v2"/><path d="M6 6l1 14h10l1-14"/><path d="M10 11v5"/><path d="M14 11v5"/></svg>
@@ -1464,45 +1343,26 @@ index 4574796..b3132b0 100644
 +            <span id="wl-card-status" class="field-hint wl-card-status">等待粘贴整条卡密</span>
 +          </div>
 +        </div>
-         <div class="field-row">
-           <div class="field">
-             <label class="field-label">邮箱</label>
+@@ -1302 +2239 @@ tbody tr:hover td { background: var(--surface-2); }
 -            <input id="wl-email" class="input" placeholder="your-email@example.com" autocomplete="off">
 +            <input id="wl-email" name="wl-login-email" class="input" placeholder="your-email@example.com" autocomplete="off" oninput="App.parseWindsurfCard('wl-email')">
-           </div>
-           <div class="field">
-             <label class="field-label">密码</label>
+@@ -1306 +2243 @@ tbody tr:hover td { background: var(--surface-2); }
 -            <input id="wl-password" class="input" type="password" placeholder="••••••••" autocomplete="off" onkeydown="if(event.key==='Enter')App.windsurfLogin()">
 +            <input id="wl-password" name="wl-login-password-new" class="input" type="password" placeholder="••••••••" autocomplete="new-password" data-lpignore="true" data-1p-ignore="true" onkeydown="if(event.key==='Enter')App.windsurfLogin()">
-           </div>
-         </div>
-         <div class="field-row-actions">
-@@ -1311,8 +1970,8 @@ tbody tr:hover td { background: var(--surface-2); }
-             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/><polyline points="10 17 15 12 10 7"/><line x1="15" y1="12" x2="3" y2="12"/></svg>
-             登录
-           </button>
+@@ -1314,2 +2251,2 @@ tbody tr:hover td { background: var(--surface-2); }
 -          <label class="checkbox" style="margin-left:auto">
 -            <input type="checkbox" id="wl-auto-add" checked>
 +          <label class="checkbox wl-auto-add-option">
 +            <input type="checkbox" id="wl-auto-add" checked onchange="App.updateWindsurfCardStatus()">
-             <span class="box"></span>
-             <span>登录成功自动加入账号池</span>
-           </label>
-@@ -1385,6 +2044,10 @@ tbody tr:hover td { background: var(--surface-2); }
-         <div class="page-subtitle">维护账号池，探测各账号订阅层级与可用模型</div>
-       </div>
-       <div class="btn-group">
+@@ -1372 +2309 @@ tbody tr:hover td { background: var(--surface-2); }
+-            <thead><tr><th>时间</th><th>邮箱</th><th>状态</th><th>代理</th><th>操作</th></tr></thead>
++            <thead><tr><th>时间</th><th>邮箱</th><th>状态</th><th>方式</th><th>代理</th><th>操作</th></tr></thead>
+@@ -1387,0 +2325,4 @@ tbody tr:hover td { background: var(--surface-2); }
 +        <button class="btn btn-outline" onclick="App.recoverAccounts()">
 +          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"><path d="M3 12a9 9 0 0 1 9-9 9 9 0 0 1 7.5 4"/><path d="M21 3v6h-6"/><path d="M21 12a9 9 0 0 1-9 9 9 9 0 0 1-7.5-4"/><path d="M3 21v-6h6"/></svg>
 +          安全恢复
 +        </button>
-         <button class="btn btn-outline" onclick="App.refreshAllCredits()">
-           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"><path d="M21 12a9 9 0 0 1-9 9 9 9 0 0 1-6.24-2.52L3 21"/><path d="M3 12a9 9 0 0 1 9-9 9 9 0 0 1 6.24 2.52L21 3"/><path d="M21 3v6h-6"/><path d="M3 21v-6h6"/></svg>
-           刷新余额
-@@ -1433,24 +2096,56 @@ tbody tr:hover td { background: var(--surface-2); }
-       <div class="section-header">
-         <div>
-           <div class="section-title">账号列表</div>
+@@ -1436 +2377,8 @@ tbody tr:hover td { background: var(--surface-2); }
 -          <div class="section-desc">勾选账号后可批量停用/启用</div>
 +          <div class="section-desc">操作列固定在右侧；勾选账号后可批量停用、启用或安全恢复</div>
 +        </div>
@@ -1512,7 +1372,7 @@ index 4574796..b3132b0 100644
 +        <div class="account-search">
 +          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.3-4.3"/></svg>
 +          <input id="account-search" class="input" placeholder="搜索邮箱、ID、状态、模型或额度..." autocomplete="off" oninput="App.filterAccounts()">
-         </div>
+@@ -1437,0 +2386,18 @@ tbody tr:hover td { background: var(--surface-2); }
 +        <select id="account-status-filter" class="select account-filter-select" onchange="App.filterAccounts()">
 +          <option value="">全部状态</option>
 +          <option value="active">Active</option>
@@ -1531,21 +1391,16 @@ index 4574796..b3132b0 100644
 +        </select>
 +        <button class="btn btn-ghost btn-sm" onclick="App.clearAccountFilters()">清除</button>
 +        <span id="account-filter-count" class="account-filter-count">0 个账号</span>
-       </div>
+@@ -1439,2 +2405,2 @@ tbody tr:hover td { background: var(--surface-2); }
 -      <div id="batch-bar" style="display:none;padding:8px 12px;background:var(--surface-2);border:1px solid var(--border);border-radius:6px;margin-bottom:8px;align-items:center;gap:8px">
 -        <span id="batch-count" style="font-size:13px;color:var(--text-muted)">已选 0 个</span>
 +      <div id="batch-bar" class="batch-bar">
 +        <span id="batch-count" class="batch-count">已选 0 个</span>
-         <button class="btn btn-primary btn-xs" onclick="App.batchSetStatus('active')">批量启用</button>
-         <button class="btn btn-outline btn-xs" onclick="App.batchSetStatus('disabled')">批量停用</button>
+@@ -1443 +2409,2 @@ tbody tr:hover td { background: var(--surface-2); }
 -        <span style="flex:1"></span>
 +        <button class="btn btn-outline btn-xs" onclick="App.recoverAccounts(true)">安全恢复</button>
 +        <span class="batch-spacer"></span>
-         <button class="btn btn-ghost btn-xs" onclick="App.selectAllAccounts()">全选</button>
-         <button class="btn btn-ghost btn-xs" onclick="App.invertSelectAccounts()">反选</button>
-         <button class="btn btn-ghost btn-xs" onclick="App.clearSelectAccounts()">取消</button>
-       </div>
-       <div class="section-body tight">
+@@ -1449,5 +2416,11 @@ tbody tr:hover td { background: var(--surface-2); }
 -        <div class="table-wrap">
 -          <table id="accounts-table">
 -            <thead><tr><th style="width:32px"><input type="checkbox" id="acct-select-all" onchange="App.onSelectAllToggle(this.checked)"></th><th>ID</th><th>标签</th><th>层级</th><th>RPM</th><th>余额</th><th>可用模型</th><th>状态</th><th>错误</th><th>最后使用</th><th>Key</th><th>操作</th></tr></thead>
@@ -1562,23 +1417,29 @@ index 4574796..b3132b0 100644
 +            </div>
 +            <div class="account-list-body"></div>
 +          </div>
-         </div>
-       </div>
-     </div>
-@@ -1847,6 +2542,9 @@ const App = {
-   statsMetric: 'requests',
-   statsData: null,
-   accountModelCatalog: {},
+@@ -1546 +2519,2 @@ tbody tr:hover td { background: var(--surface-2); }
+-            <input id="proxy-host" class="input" placeholder="proxy.example.com">
++            <input id="proxy-host" class="input" placeholder="proxy.example.com" oninput="App.validateGlobalProxyForm()">
++            <div id="proxy-host-error" class="field-error">请输入合法的 IP、localhost 或域名，不要包含协议头。</div>
+@@ -1550 +2524,2 @@ tbody tr:hover td { background: var(--surface-2); }
+-            <input id="proxy-port" class="input" type="number" placeholder="8080">
++            <input id="proxy-port" class="input" type="number" min="1" max="65535" placeholder="8080" oninput="App.validateGlobalProxyForm()">
++            <div id="proxy-port-error" class="field-error">端口必须在 1 到 65535 之间。</div>
+@@ -1569 +2544 @@ tbody tr:hover td { background: var(--surface-2); }
+-          <button class="btn btn-primary" onclick="App.saveGlobalProxy()">保存</button>
++          <button id="proxy-save-btn" class="btn btn-primary" onclick="App.saveGlobalProxy()">保存</button>
+@@ -1602,0 +2578,6 @@ tbody tr:hover td { background: var(--surface-2); }
++      <div class="log-level-tags" aria-label="日志级别快捷过滤">
++        <button class="log-level-tag active" data-log-level="" onclick="App.setLogLevel('')">ALL</button>
++        <button class="log-level-tag" data-log-level="info" onclick="App.setLogLevel('info')">INFO</button>
++        <button class="log-level-tag" data-log-level="warn" onclick="App.setLogLevel('warn')">WARN</button>
++        <button class="log-level-tag" data-log-level="error" onclick="App.setLogLevel('error')">ERROR</button>
++      </div>
+@@ -1849,0 +2831,3 @@ const App = {
 +  accountKeyById: {},
 +  accountRows: [],
 +  accountOverview: null,
-
-   // Register a polling loader. Guarantees exactly one timer per key even if
-   // the loader is invoked repeatedly, and auto-pauses while the tab is
-@@ -1880,6 +2578,39 @@ const App = {
-     this.init();
-   },
-
+@@ -1882,0 +2867,33 @@ const App = {
 +  formatCompactNumber(value, { digits = 1 } = {}) {
 +    const n = Number(value || 0);
 +    if (!Number.isFinite(n)) return '0';
@@ -1612,61 +1473,144 @@ index 4574796..b3132b0 100644
 +      </div>`;
 +  },
 +
-   navigate(panel) {
-     document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
-     document.querySelectorAll('.sidebar nav a').forEach(a => a.classList.remove('active'));
-@@ -2019,35 +2750,35 @@ const App = {
-         <div class="card-header"><div class="card-title">活跃账号</div>
-           <svg class="card-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>
-         </div>
+@@ -2022 +3039 @@ const App = {
 -        <div class="card-value">${d.accounts?.active || 0}</div>
 +        <div class="card-value">${this.formatCompactNumber(d.accounts?.active || 0)}</div>
-         <div class="card-sub">${d.accounts?.total || 0} 个总账号 · ${d.accounts?.error || 0} 异常</div>
-       </div>
-       <div class="card info">
-         <div class="card-header"><div class="card-title">总请求数</div>
-           <svg class="card-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>
-         </div>
+@@ -2029 +3046 @@ const App = {
 -        <div class="card-value">${d.totalRequests || 0}</div>
 +        <div class="card-value">${this.formatCompactNumber(d.totalRequests || 0)}</div>
-         <div class="card-sub">成功率 ${d.successRate || 0}%</div>
-       </div>
-       <div class="card">
-         <div class="card-header"><div class="card-title">运行时间</div>
-           <svg class="card-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
-         </div>
+@@ -2036 +3053 @@ const App = {
 -        <div class="card-value" style="font-size:20px">${uptime}</div>
 +        <div class="card-value compact">${uptime}</div>
-         <div class="card-sub">启动于 ${d.startedAt ? new Date(d.startedAt).toLocaleString() : '-'}</div>
-       </div>
-       <div class="card ${ls.running ? 'success' : 'error'}">
-         <div class="card-header"><div class="card-title">Language Server</div>
-           <svg class="card-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"><rect x="2" y="2" width="20" height="8" rx="2"/><rect x="2" y="14" width="20" height="8" rx="2"/><line x1="6" y1="6" x2="6.01" y2="6"/><line x1="6" y1="18" x2="6.01" y2="18"/></svg>
-         </div>
+@@ -2043 +3060 @@ const App = {
 -        <div class="card-value" style="font-size:20px">${ls.running ? '运行中' : '已停止'}</div>
 +        <div class="card-value compact">${ls.running ? '运行中' : '已停止'}</div>
-         <div class="card-sub">${poolCount} 个实例 · 端口 ${ls.port || '-'}</div>
-       </div>
-       <div class="card info">
-         <div class="card-header"><div class="card-title">响应缓存</div>
-           <svg class="card-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/><path d="M3 12c0 1.66 4 3 9 3s9-1.34 9-3"/></svg>
-         </div>
+@@ -2050 +3067 @@ const App = {
 -        <div class="card-value">${d.cache?.hitRate || '0.0'}%</div>
 +        <div class="card-value">${Number(d.cache?.hitRate || 0).toFixed(1)}%</div>
-         <div class="card-sub">${d.cache?.hits || 0} 命中 / ${d.cache?.misses || 0} 未命中 · ${d.cache?.size || 0}/${d.cache?.maxSize || 0} 条</div>
-       </div>
-     `;
-@@ -2083,26 +2814,298 @@ const App = {
-   },
-
-   // ─── Windsurf Login ──────────────────────────
+@@ -2055,5 +3072,32 @@ const App = {
+-    if (instances.length > 0) {
+-      document.getElementById('ls-status').innerHTML = `
+-        <div class="ls-pool">
+-          ${instances.map(i => `
+-            <div class="ls-inst">
++    document.getElementById('ls-status').innerHTML = this.renderLsPool(instances, { source: 'overview' });
++    this.poll('overview', () => this.loadOverview(), 15000);
++  },
++
++  renderLsPool(instances = [], opts = {}) {
++    const items = instances.length ? instances : [{
++      key: 'default', port: 42100, pid: null, proxy: null, ready: false,
++      kind: 'default', startMode: 'manual', running: false,
++    }];
++    return `
++      <div class="ls-pool">
++        ${items.map(i => {
++          const key = i.key || 'default';
++          const isDefault = key === 'default' || i.kind === 'default';
++          const paused = !!i.paused || i.state === 'paused';
++          const running = i.running === true && !!i.ready;
++          const title = isDefault ? '默认实例' : key.replace(/^px_/, '');
++          const modeText = isDefault ? '手动启动' : (paused ? '自动启动已暂停' : '随账号代理自动启动');
++          const dotClass = running ? '' : (paused ? 'paused' : (i.running === false ? 'stopped' : 'pending'));
++          const statusText = running ? '运行中' : (paused ? '已暂停' : (i.running === false ? '已停止' : '启动中'));
++          const statusClass = running ? 'running' : (paused ? 'paused' : (i.running === false ? 'stopped' : 'warn'));
++          const escapedKey = this.esc(key);
++          const actions = isDefault
++            ? (running
++              ? `<button class="btn btn-outline btn-xs" onclick="App.stopLsInstance('${escapedKey}')">关闭默认实例</button>`
++              : `<button class="btn btn-primary btn-xs" onclick="App.startLsInstance('${escapedKey}')">开启默认实例</button>`)
++            : (running
++              ? `<button class="btn btn-outline btn-xs" onclick="App.restartLsInstance('${escapedKey}')">重启</button>
++                 <button class="btn btn-ghost btn-xs" onclick="App.stopLsInstance('${escapedKey}')">暂停</button>`
++              : `<button class="btn btn-primary btn-xs" onclick="App.startLsInstance('${escapedKey}')">开启代理实例</button>`);
++          return `
++            <div class="ls-inst ${running ? 'running' : (paused ? 'paused' : 'stopped')}">
+@@ -2061,2 +3105,2 @@ const App = {
+-                <span class="ls-dot ${i.ready ? '' : 'pending'}"></span>
+-                ${this.esc(i.key === 'default' ? '默认实例' : i.key.replace(/^px_/, ''))}
++                <span class="ls-dot ${dotClass}"></span>
++                ${this.esc(title)}
+@@ -2064 +3108,5 @@ const App = {
+-              <div class="ls-meta">端口 ${i.port} · PID ${i.pid || '-'}</div>
++              <div class="ls-badges">
++                <span class="badge ${statusClass}">${statusText}</span>
++                <span class="badge no-dot info">${modeText}</span>
++              </div>
++              <div class="ls-meta">端口 ${i.port || '-'} · PID ${i.pid || '-'}</div>
+@@ -2066,10 +3114,4 @@ const App = {
+-            </div>
+-          `).join('')}
+-        </div>`;
+-    } else {
+-      document.getElementById('ls-status').innerHTML = `
+-        <span class="badge ${ls.running ? 'running' : 'stopped'}">${ls.running ? '运行中' : '已停止'}</span>
+-        <span class="text-sm text-muted" style="margin-left:12px">PID ${ls.pid || '-'} · 端口 ${ls.port || '-'} · 重启 ${ls.restartCount || 0} 次</span>
+-      `;
+-    }
+-    this.poll('overview', () => this.loadOverview(), 15000);
++              <div class="ls-actions">${actions}</div>
++            </div>`;
++        }).join('')}
++      </div>`;
+@@ -2078,2 +3120,16 @@ const App = {
+-  async restartLs() {
+-    const ok = await this.confirm('重启 Language Server', '进行中的请求将会失败，确定要继续吗？', { danger: true, okText: '重启' });
++  async startLsInstance(key = 'default') {
++    const r = await this.api('POST', `/langserver/instances/${encodeURIComponent(key)}/start`, {});
++    if (r.error) return this.toast(r.error, 'error');
++    this.toast(key === 'default' ? '默认实例已开启' : '代理实例已开启');
++    this.refreshLsViews();
++  },
++
++  async stopLsInstance(key = 'default') {
++    const isDefault = key === 'default';
++    const ok = await this.confirm(
++      isDefault ? '关闭默认实例' : '暂停代理实例',
++      isDefault
++        ? '只会关闭无代理 default 实例；代理实例不受影响。'
++        : '将停止这个代理 LS，并暂停它的自动拉起。暂停期间依赖该代理的账号请求会失败，直到你手动开启代理实例。',
++      { danger: !isDefault, okText: isDefault ? '关闭' : '暂停' }
++    );
+@@ -2081,2 +3137,28 @@ const App = {
+-    await this.api('POST', '/langserver/restart', { confirm: true });
+-    this.toast('Language Server 重启中...', 'info');
++    const r = await this.api('POST', `/langserver/instances/${encodeURIComponent(key)}/stop`, {});
++    if (r.error) return this.toast(r.error, 'error');
++    this.toast(isDefault ? '默认实例已关闭' : '代理实例已暂停', 'info');
++    this.refreshLsViews();
++  },
++
++  async restartLsInstance(key = 'default') {
++    const ok = await this.confirm(
++      key === 'default' ? '重启默认实例' : '重启代理实例',
++      key === 'default' ? '只会重启无代理 default 实例。' : '只会重启这个代理实例；进行中的请求可能失败。',
++      { danger: true, okText: '重启' }
++    );
++    if (!ok) return;
++    const r = await this.api('POST', `/langserver/instances/${encodeURIComponent(key)}/restart`, {});
++    if (r.error) return this.toast(r.error, 'error');
++    this.toast(key === 'default' ? '默认实例已重启' : '代理实例已重启', 'info');
++    this.refreshLsViews();
++  },
++
++  async restartLs() {
++    return this.restartLsInstance('default');
++  },
++
++  refreshLsViews() {
++    this.loadOverview();
++    if (location.hash === '#accounts' || document.getElementById('p-accounts')?.classList.contains('active')) {
++      this.loadAccounts();
++    }
+@@ -2086 +3168,5 @@ const App = {
 -  loadWindsurfLogin() { this.renderLoginHistory(); },
 +  loadWindsurfLogin() {
 +    this.clearWindsurfPasswordField();
 +    this.renderLoginHistory();
 +    this.updateWindsurfCardStatus();
 +  },
-
+@@ -2088,4 +3174,187 @@ const App = {
 -  async windsurfLogin() {
 -    const email = document.getElementById('wl-email').value.trim();
 -    const password = document.getElementById('wl-password').value.trim();
@@ -1687,15 +1631,18 @@ index 4574796..b3132b0 100644
 +      return { ok: false, line: rawLine, lineNo, reason: '格式不完整' };
 +    }
 +    const email = (parts[0] || '').trim();
-+    const password = (parts[1] || '').trim();
-+    const token = parts.slice(2).join('----').trim();
++    const secret = (parts[1] || '').trim();
++    const extra = parts.slice(2).join('----').trim();
 +    if (!email.includes('@')) {
 +      return { ok: false, line: rawLine, lineNo, reason: '邮箱格式不正确' };
 +    }
-+    if (!password) {
-+      return { ok: false, line: rawLine, lineNo, reason: '缺少密码' };
++    if (!secret) {
++      return { ok: false, line: rawLine, lineNo, reason: '缺少密码或 Auth1 令牌' };
 +    }
-+    return { ok: true, email, password, token, line: rawLine, lineNo };
++    if (secret.startsWith('auth1_')) {
++      return { ok: true, kind: 'auth1', email, auth1Token: secret, issuedAt: extra, line: rawLine, lineNo };
++    }
++    return { ok: true, kind: 'password', email, password: secret, token: extra, line: rawLine, lineNo };
 +  },
 +
 +  _parseWindsurfCardBatch(raw) {
@@ -1712,7 +1659,14 @@ index 4574796..b3132b0 100644
 +      if (parsed.ok) valid.push(parsed);
 +      else invalid.push(parsed);
 +    });
-+    return { lines, valid, invalid, tokenCount: valid.filter(x => x.token).length };
++    return {
++      lines,
++      valid,
++      invalid,
++      tokenCount: valid.filter(x => x.token).length,
++      auth1Count: valid.filter(x => x.kind === 'auth1').length,
++      passwordCount: valid.filter(x => x.kind !== 'auth1').length,
++    };
 +  },
 +
 +  _parseWindsurfCardText(raw) {
@@ -1730,7 +1684,9 @@ index 4574796..b3132b0 100644
 +    }
 +    const chips = [];
 +    for (const item of (batch.valid || []).slice(0, 6)) {
-+      chips.push(`<span class="wl-batch-chip" title="第 ${item.lineNo} 行"><span>${this.esc(item.email)}</span></span>`);
++      const isAuth1 = item.kind === 'auth1';
++      const label = isAuth1 ? 'Auth1' : '密码';
++      chips.push(`<span class="wl-batch-chip ${isAuth1 ? 'auth1' : ''}" title="第 ${item.lineNo} 行 · ${label}"><span>${this.esc(item.email)}</span><small>${label}</small></span>`);
 +    }
 +    const rest = (batch.valid || []).length - 6;
 +    if (rest > 0) chips.push(`<span class="wl-batch-chip"><span>+${rest} 条</span></span>`);
@@ -1740,7 +1696,7 @@ index 4574796..b3132b0 100644
 +    preview.innerHTML = chips.join('');
 +    preview.classList.remove('hidden');
 +  },
-
++
 +  setWindsurfCardStatus(text, tone = 'muted') {
 +    const el = document.getElementById('wl-card-status');
 +    if (!el) return;
@@ -1764,20 +1720,25 @@ index 4574796..b3132b0 100644
 +    if (batch.valid.length > 1) {
 +      if (modeEl) modeEl.textContent = `批量 ${batch.valid.length}`;
 +      const invalidText = batch.invalid.length ? `，${batch.invalid.length} 行待修正` : '';
-+      this.setWindsurfCardStatus(`已识别 ${batch.valid.length} 个账号${invalidText}${autoAdd ? '，登录成功会自动入池' : ''}`, batch.invalid.length ? 'warn' : 'success');
++      const methodText = `${batch.passwordCount ? `密码 ${batch.passwordCount}` : ''}${batch.passwordCount && batch.auth1Count ? ' / ' : ''}${batch.auth1Count ? `Auth1 ${batch.auth1Count}` : ''}`;
++      this.setWindsurfCardStatus(`已识别 ${batch.valid.length} 个账号（${methodText}）${invalidText}${autoAdd ? '，成功会自动入池' : ''}`, batch.invalid.length ? 'warn' : 'success');
 +      return;
 +    }
 +    if (batch.valid.length === 1) {
 +      if (modeEl) modeEl.textContent = '单条';
 +      const parsed = batch.valid[0];
 +      const invalidText = batch.invalid.length ? `，另有 ${batch.invalid.length} 行待修正` : '';
-+      this.setWindsurfCardStatus(`${parsed.token ? '已识别邮箱和密码，session token 不会在本页使用' : '已识别邮箱和密码'}${invalidText}`, batch.invalid.length ? 'warn' : 'success');
++      if (parsed.kind === 'auth1') {
++        this.setWindsurfCardStatus(`已识别 Auth1 短期令牌，入池时会换成 session token${invalidText}`, batch.invalid.length ? 'warn' : 'success');
++      } else {
++        this.setWindsurfCardStatus(`${parsed.token ? '已识别邮箱和密码，session token 不会在本页使用' : '已识别邮箱和密码'}${invalidText}`, batch.invalid.length ? 'warn' : 'success');
++      }
 +      return;
 +    }
 +    if (modeEl) modeEl.textContent = '自动识别';
 +    if (card) {
 +      const invalidText = batch.invalid.length ? `：${batch.invalid[0].reason}` : '';
-+      this.setWindsurfCardStatus(`未识别到可登录卡密${invalidText}，请使用：邮箱----密码----session token`, 'warn');
++      this.setWindsurfCardStatus(`未识别到可处理卡密${invalidText}，请使用：邮箱----密码----session token 或 邮箱----auth1_令牌----时间`, 'warn');
 +      return;
 +    }
 +    const pastedInEmail = this._parseWindsurfCardText(email);
@@ -1807,10 +1768,14 @@ index 4574796..b3132b0 100644
 +      return null;
 +    }
 +    emailEl.value = parsed.email;
-+    passEl.value = parsed.password;
++    passEl.value = parsed.kind === 'auth1' ? '' : parsed.password;
 +    this.renderWindsurfCardPreview(batch);
 +    const extra = batch.valid.length > 1 ? `，当前填入第 1 条，剩余 ${batch.valid.length - 1} 条可批量登录` : '';
-+    this.setWindsurfCardStatus(`${parsed.token ? '已拆分邮箱和密码，session token 仅保留在卡密框中' : '已拆分邮箱和密码'}${extra}`, 'success');
++    if (parsed.kind === 'auth1') {
++      this.setWindsurfCardStatus(`已识别 Auth1 卡，令牌只留在卡密框中；请直接登录/批量入池${extra}`, 'success');
++    } else {
++      this.setWindsurfCardStatus(`${parsed.token ? '已拆分邮箱和密码，session token 仅保留在卡密框中' : '已拆分邮箱和密码'}${extra}`, 'success');
++    }
 +    return parsed;
 +  },
 +
@@ -1820,6 +1785,11 @@ index 4574796..b3132b0 100644
 +    if (!parsed) {
 +      this.toast('未识别到卡密格式', 'error');
 +      return null;
++    }
++    if (parsed.kind === 'auth1') {
++      document.getElementById('wl-batch-btn')?.focus();
++      this.toast(batch.valid.length > 1 ? `已识别 Auth1 卡，可批量处理 ${batch.valid.length} 条` : '已识别 Auth1 卡，请直接入池');
++      return parsed;
 +    }
 +    document.getElementById('wl-password')?.focus();
 +    this.toast(batch.valid.length > 1 ? `已填入首条，可批量处理 ${batch.valid.length} 条` : '已拆分邮箱和密码');
@@ -1832,22 +1802,17 @@ index 4574796..b3132b0 100644
 +    this.renderWindsurfCardPreview({ valid: [], invalid: [] });
 +    this.updateWindsurfCardStatus();
 +  },
-+
+@@ -2092,0 +3362 @@ const App = {
 +  getWindsurfLoginProxy() {
-     const proxyHost = document.getElementById('wl-proxy-host').value.trim();
+@@ -2094 +3364 @@ const App = {
 -    const proxy = proxyHost ? {
 +    return proxyHost ? {
-       type: document.getElementById('wl-proxy-type').value,
-       host: proxyHost,
-       port: parseInt(document.getElementById('wl-proxy-port').value) || 8080,
-       username: document.getElementById('wl-proxy-user').value,
-       password: document.getElementById('wl-proxy-pass').value,
-     } : null;
+@@ -2101 +3371 @@ const App = {
 -    const autoAdd = document.getElementById('wl-auto-add').checked;
 +  },
-
+@@ -2102,0 +3373 @@ const App = {
 +  setWindsurfLoginBusy(busy, label = '登录中...') {
-     const btn = document.getElementById('wl-btn');
+@@ -2104,2 +3375,115 @@ const App = {
 -    btn.disabled = true;
 -    btn.innerHTML = '<span class="spinner"></span> 登录中...';
 +    const batchBtn = document.getElementById('wl-batch-btn');
@@ -1859,7 +1824,7 @@ index 4574796..b3132b0 100644
 +    }
 +    if (batchBtn) {
 +      batchBtn.disabled = busy;
-+      batchBtn.innerHTML = busy ? `<span class="spinner"></span> ${this.esc(label)}` : `${batchIcon} 批量登录入池`;
++      batchBtn.innerHTML = busy ? `<span class="spinner"></span> ${this.esc(label)}` : `${batchIcon} 批量登录/换票入池`;
 +    }
 +  },
 +
@@ -1887,6 +1852,7 @@ index 4574796..b3132b0 100644
 +        <table class="wl-result-table">
 +          <tr><td>邮箱</td><td>${this.esc(r.email)}</td></tr>
 +          <tr><td>姓名</td><td>${this.esc(r.name || '-')}</td></tr>
++          ${r.method ? `<tr><td>方式</td><td>${r.method === 'auth1' ? 'Auth1 换票' : '密码登录'}</td></tr>` : ''}
 +          <tr><td>凭据预览</td><td><code>${this.esc(r.keyPreview || '-')}</code></td></tr>
 +          ${(r.orgs || []).length ? `<tr><td>组织</td><td>${(r.orgs || []).length} 个${r.requiresOrgSelection ? '（已使用默认返回）' : ''}</td></tr>` : ''}
 +          ${r.account ? `<tr><td>账号 ID</td><td><code>${this.esc(r.account.id)}</code> <span class="badge active">${this.esc(r.account.status)}</span></td></tr>` : ''}
@@ -1917,6 +1883,7 @@ index 4574796..b3132b0 100644
 +      <tr>
 +        <td class="text-sm nowrap">#${idx + 1}</td>
 +        <td>${this.esc(item.email)}</td>
++        <td><span class="badge ${item.method === 'auth1' ? 'info' : 'muted'} no-dot">${item.method === 'auth1' ? 'Auth1' : '密码'}</span></td>
 +        <td><span class="badge ${item.ok ? 'active' : 'error'}">${item.ok ? '成功' : '失败'}</span></td>
 +        <td class="text-sm">${item.ok ? this.esc(item.response?.keyPreview || '-') : this.esc(item.error || '未知错误')}</td>
 +      </tr>
@@ -1925,6 +1892,7 @@ index 4574796..b3132b0 100644
 +      <tr>
 +        <td class="text-sm nowrap">第 ${item.lineNo} 行</td>
 +        <td class="text-dim">原文已隐藏</td>
++        <td><span class="badge muted no-dot">-</span></td>
 +        <td><span class="badge warn">格式无效</span></td>
 +        <td class="text-sm">${this.esc(item.reason)}</td>
 +      </tr>
@@ -1940,7 +1908,7 @@ index 4574796..b3132b0 100644
 +      <div class="section-body tight">
 +        <div class="table-wrap">
 +          <table>
-+            <thead><tr><th>序号</th><th>账号</th><th>状态</th><th>结果</th></tr></thead>
++            <thead><tr><th>序号</th><th>账号</th><th>方式</th><th>状态</th><th>结果</th></tr></thead>
 +            <tbody>${rows}${invalidRows}</tbody>
 +          </table>
 +        </div>
@@ -1952,6 +1920,9 @@ index 4574796..b3132b0 100644
 +    if (cardBatch.valid.length > 1 || (cardBatch.valid.length && cardBatch.invalid.length)) {
 +      return this.windsurfBatchLogin();
 +    }
++    if (cardBatch.valid.length === 1 && cardBatch.valid[0].kind === 'auth1') {
++      return this.windsurfBatchLogin();
++    }
 +    this.parseWindsurfCard('wl-card') || this.parseWindsurfCard('wl-email');
 +    const email = document.getElementById('wl-email').value.trim();
 +    const password = document.getElementById('wl-password').value.trim();
@@ -1959,15 +1930,12 @@ index 4574796..b3132b0 100644
 +
 +    const proxy = this.getWindsurfLoginProxy();
 +    const autoAdd = document.getElementById('wl-auto-add').checked;
-+
+@@ -2107 +3491,3 @@ const App = {
+-    const entry = { time: new Date().toISOString(), email, proxy: proxy ? `${proxy.type}://${proxy.host}:${proxy.port}` : '全局', status: 'pending' };
 +    this.setWindsurfLoginBusy(true, '登录中...');
-
-     const entry = { time: new Date().toISOString(), email, proxy: proxy ? `${proxy.type}://${proxy.host}:${proxy.port}` : '全局', status: 'pending' };
-
-@@ -2110,49 +3113,95 @@ const App = {
-       const r = await this.api('POST', '/windsurf-login', { email, password, proxy, autoAdd });
-       if (r.success) {
-         entry.status = 'success';
++
++    const entry = { time: new Date().toISOString(), email, method: 'password', proxy: proxy ? `${proxy.type}://${proxy.host}:${proxy.port}` : '全局', status: 'pending' };
+@@ -2113,19 +3499,8 @@ const App = {
 -        entry.apiKey = r.apiKey?.slice(0, 16) + '...';
 -        const rd = document.getElementById('wl-result');
 -        rd.classList.remove('hidden');
@@ -1995,8 +1963,7 @@ index 4574796..b3132b0 100644
 +        if (passEl) passEl.value = '';
 +        this.setWindsurfCardStatus('登录成功，卡密与密码已清空', 'success');
 +        this.toast(autoAdd ? '登录成功，账号已加入' : '登录成功，凭据已生成');
-       } else {
-         entry.status = 'error: ' + (r.error || 'unknown');
+@@ -2134,9 +3509 @@ const App = {
 -        const rd = document.getElementById('wl-result');
 -        rd.classList.remove('hidden');
 -        rd.innerHTML = `
@@ -2007,19 +1974,16 @@ index 4574796..b3132b0 100644
 -          </div>
 -          <div class="section-body"><p class="text-sm">${this.esc(r.error || '未知错误')}</p></div>`;
 +        this.renderWindsurfFailureResult(r.error || '未知错误');
-         this.toast(r.error || '登录失败', 'error');
-       }
-     } catch (err) {
-       entry.status = 'error: ' + err.message;
+@@ -2146,0 +3514 @@ const App = {
 +      this.renderWindsurfFailureResult(err.message);
-       this.toast(err.message, 'error');
+@@ -2147,0 +3516,4 @@ const App = {
 +    } finally {
 +      this.recordWindsurfLoginEntries([entry]);
 +      this.setWindsurfLoginBusy(false);
 +      this.updateWindsurfCardStatus();
-     }
+@@ -2148,0 +3521 @@ const App = {
 +  },
-
+@@ -2150,6 +3523,71 @@ const App = {
 -    this.loginHistory.unshift(entry);
 -    if (this.loginHistory.length > 50) this.loginHistory.length = 50;
 -    localStorage.setItem('wl_history', JSON.stringify(this.loginHistory));
@@ -2046,23 +2010,29 @@ index 4574796..b3132b0 100644
 +    try {
 +      for (let i = 0; i < batch.valid.length; i++) {
 +        const item = batch.valid[i];
-+        this.setWindsurfLoginBusy(true, `${i + 1}/${batch.valid.length} 登录中...`);
-+        this.setWindsurfCardStatus(`正在登录 ${i + 1}/${batch.valid.length}：${item.email}`, 'muted');
-+        const entry = { time: new Date().toISOString(), email: item.email, proxy: proxy ? `${proxy.type}://${proxy.host}:${proxy.port}` : '全局', status: 'pending' };
++        const isAuth1 = item.kind === 'auth1';
++        const methodLabel = isAuth1 ? 'Auth1 换票' : '密码登录';
++        this.setWindsurfLoginBusy(true, `${i + 1}/${batch.valid.length} ${isAuth1 ? '换票中...' : '登录中...'}`);
++        this.setWindsurfCardStatus(`正在${methodLabel} ${i + 1}/${batch.valid.length}：${item.email}`, 'muted');
++        const entry = { time: new Date().toISOString(), email: item.email, method: isAuth1 ? 'auth1' : 'password', proxy: proxy ? `${proxy.type}://${proxy.host}:${proxy.port}` : '全局', status: 'pending' };
 +        try {
-+          const r = await this.api('POST', '/windsurf-login', { email: item.email, password: item.password, proxy, autoAdd });
++          const endpoint = isAuth1 ? '/windsurf-auth1' : '/windsurf-login';
++          const payload = isAuth1
++            ? { email: item.email, auth1Token: item.auth1Token, proxy, autoAdd }
++            : { email: item.email, password: item.password, proxy, autoAdd };
++          const r = await this.api('POST', endpoint, payload);
 +          if (r.success) {
 +            entry.status = 'success';
 +            entry.apiKey = r.keyPreview || '';
-+            results.push({ ok: true, email: item.email, card: item, response: r });
++            results.push({ ok: true, email: item.email, method: entry.method, card: item, response: r });
 +          } else {
 +            const error = r.error || '未知错误';
 +            entry.status = 'error: ' + error;
-+            results.push({ ok: false, email: item.email, card: item, error });
++            results.push({ ok: false, email: item.email, method: entry.method, card: item, error });
 +          }
 +        } catch (err) {
 +          entry.status = 'error: ' + err.message;
-+          results.push({ ok: false, email: item.email, card: item, error: err.message });
++          results.push({ ok: false, email: item.email, method: entry.method, card: item, error: err.message });
 +        }
 +        entries.push(entry);
 +      }
@@ -2091,21 +2061,30 @@ index 4574796..b3132b0 100644
 +      tone
 +    );
 +    this.toast(`批量完成：成功 ${okCount}，失败 ${failCount}${invalidCount ? `，格式无效 ${invalidCount}` : ''}`, tone === 'success' ? 'success' : 'warn');
-   },
-
-   renderLoginHistory() {
-@@ -2187,6 +3236,7 @@ const App = {
-       this.api('GET', '/models').catch(() => ({})),
-     ]);
-     this.accountModelCatalog = Object.fromEntries((modelData.models || []).map(m => [m.id, m]));
+@@ -2162,0 +3601 @@ const App = {
++      const method = h.method === 'auth1' ? 'Auth1' : '密码';
+@@ -2169,0 +3609 @@ const App = {
++        <td><span class="badge ${h.method === 'auth1' ? 'info' : 'muted'} no-dot">${method}</span></td>
+@@ -2173 +3613 @@ const App = {
+-    }).join('') || '<tr class="empty-row"><td colspan="5">暂无登录记录</td></tr>';
++    }).join('') || '<tr class="empty-row"><td colspan="6">暂无登录记录</td></tr>';
+@@ -2189,0 +3630 @@ const App = {
 +    this.accountKeyById = Object.fromEntries((d.accounts || []).map(a => [a.id, a.apiKey]).filter(([, key]) => !!key));
-     if (ov?.langServer) {
-       const instances = ov.langServer.instances || [];
-       const poolCard = document.getElementById('ls-pool-card');
-@@ -2219,63 +3269,67 @@ const App = {
-         poolCard.innerHTML = '';
-       }
-     }
+@@ -2204,12 +3645 @@ const App = {
+-                <div class="ls-pool">
+-                  ${instances.map(i => `
+-                    <div class="ls-inst">
+-                      <div class="ls-key">
+-                        <span class="ls-dot ${i.ready ? '' : 'pending'}"></span>
+-                        ${this.esc(i.key === 'default' ? '默认实例' : i.key.replace(/^px_/, ''))}
+-                      </div>
+-                      <div class="ls-meta">端口 ${i.port} · PID ${i.pid || '-'}</div>
+-                      <div class="ls-meta">${this.esc(i.proxy || '无代理')}</div>
+-                    </div>
+-                  `).join('')}
+-                </div>
++                ${this.renderLsPool(instances, { source: 'accounts' })}
+@@ -2222,2 +3652,18 @@ const App = {
 -  }
 -    const tbody = document.querySelector('#accounts-table tbody');
 +    }
@@ -2126,11 +2105,11 @@ index 4574796..b3132b0 100644
 +        : `显示 ${accounts.length} / ${total} 个`;
 +    }
 +    const ov = this.accountOverview || {};
-     const tierLabel = { pro: 'PRO', free: 'FREE', expired: '已过期', unknown: '未知' };
+@@ -2225 +3671,2 @@ const App = {
 -    tbody.innerHTML = (d.accounts || []).map(a => {
 +    list.innerHTML = accounts.map(a => {
 +      const status = a.status || 'unknown';
-       const tier = a.tier || 'unknown';
+@@ -2226,0 +3674,8 @@ const App = {
 +      const modelLimits = this.normalizeModelLimits(a);
 +      const modelLimitBadge = this.renderModelLimitChips(modelLimits, { compact: true });
 +      const globalLimitBadge = a.rateLimited && a.rateLimitedUntil
@@ -2139,19 +2118,11 @@ index 4574796..b3132b0 100644
 +      const recoveryHint = (status === 'error' || status === 'expired')
 +        ? `<span class="badge warn" title="可尝试安全恢复">可恢复?</span>`
 +        : '';
-       // Compact summary: avail/total + 编辑 button. Clicking opens modal.
-       const tierModels = a.tierModels || [];
-       const blockedCount = (a.blockedModels || []).length;
-       const availCount = tierModels.length - blockedCount;
-       const capsHtml = tierModels.length
+@@ -2232 +3687,2 @@ const App = {
 -        ? `<button class="btn btn-ghost btn-xs" style="min-width:96px" onclick="App.openBlockedModal('${a.id}')" title="编辑该账号可用模型">
 +        ? `<button class="btn btn-ghost btn-xs" onclick="App.openBlockedModal('${a.id}')" title="编辑该账号可用模型">
 +             <span>模型</span>
-              <span style="color:var(--success,#10b981);font-weight:600">${availCount}</span>
-              <span style="color:var(--text-dim)">/${tierModels.length}</span>
-              ${blockedCount > 0 ? `<span class="badge warn" style="margin-left:4px">-${blockedCount}</span>` : ''}
-            </button>`
-         : `<span class="text-xs text-dim">-</span>`;
+@@ -2238,18 +3694 @@ const App = {
 -      const rateLimitBadge = a.rateLimited ? ` <span class="badge warn">限流中</span>` : '';
 -      const rpmUsed = a.rpmUsed ?? 0;
 -      const rpmLimit = a.rpmLimit ?? 0;
@@ -2171,26 +2142,22 @@ index 4574796..b3132b0 100644
 -      // Credit / quota cell — collapses the legacy credit contract and the
 -      // newer daily/weekly percent contract into a single progress bar.
 +      // Credit / quota summary — keep the row compact; full details live in the expander.
-       const cr = a.credits || null;
+@@ -2257 +3696 @@ const App = {
 -      let creditCell;
 +      let creditSummary;
-       if (!cr) {
+@@ -2259 +3698 @@ const App = {
 -        creditCell = `<span class="text-xs text-dim">尚未获取</span>`;
 +        creditSummary = `<span class="text-xs text-dim">额度：尚未获取</span>`;
-       } else if (cr.lastError && cr.percent == null && !cr.prompt?.limit) {
+@@ -2261 +3700 @@ const App = {
 -        creditCell = `<span class="text-xs" style="color:var(--error)" title="${this.esc(cr.lastError)}">获取失败</span>`;
 +        creditSummary = `<span class="text-xs" style="color:var(--error)" title="${this.esc(cr.lastError)}">额度获取失败</span>`;
-       } else {
-         const planName = cr.planName || '-';
-         const fetchedAgo = cr.fetchedAt ? Math.round((Date.now() - cr.fetchedAt) / 60000) + 'm ago' : '-';
-
+@@ -2266 +3705 @@ const App = {
 -        const barHtml = (label, pct, resetAt) => {
 +        const quotaChip = (label, pct, resetAt) => {
-           if (pct == null) return '';
-           const v = Math.max(0, Math.min(100, pct));
+@@ -2269 +3708 @@ const App = {
 -          const color = v <= 10 ? 'var(--error)' : v <= 30 ? 'var(--warn, #f59e0b)' : 'var(--success, #10b981)';
 +          const state = v <= 10 ? 'error' : v <= 30 ? 'warn' : '';
-           const resetStr = resetAt ? new Date(resetAt * 1000).toLocaleString() : '';
+@@ -2271,8 +3710,3 @@ const App = {
 -          return `<div style="margin-bottom:3px" title="${label} 剩余 ${v.toFixed(1)}%${resetStr ? '，重置: ' + resetStr : ''}">
 -            <div class="text-xs" style="display:flex;justify-content:space-between;margin-bottom:1px">
 -              <span style="color:var(--text-dim)">${label}</span><span style="color:${color};font-weight:600">${v.toFixed(0)}%</span>
@@ -2200,15 +2167,9 @@ index 4574796..b3132b0 100644
 -            </div>
 -          </div>`;
 +          return `<span class="quota-chip ${state}" title="${label} 剩余 ${v.toFixed(1)}%${resetStr ? '，重置: ' + resetStr : ''}">
-+            <span>${label}</span><strong>${v.toFixed(0)}%</strong>
++            <span class="quota-label">${label}</span><strong class="quota-value">${v.toFixed(0)}%</strong>
 +          </span>`;
-         };
-
-         const tipLines = [
-@@ -2287,63 +3341,106 @@ const App = {
-           cr.lastError ? `Last error: ${cr.lastError}` : '',
-         ].filter(Boolean).join('\n');
-
+@@ -2290,8 +3724,8 @@ const App = {
 -        creditCell = `<div style="min-width:140px" title="${this.esc(tipLines)}">
 -            <div class="text-xs" style="display:flex;justify-content:space-between;margin-bottom:3px">
 -              <span style="font-weight:600">${this.esc(planName.slice(0, 10))}</span>
@@ -2225,16 +2186,14 @@ index 4574796..b3132b0 100644
 +        creditSummary = `<div class="account-quota-summary" title="${this.esc(tipLines)}">
 +            <span class="tier ${tier}">${this.esc((planName || tierLabel[tier] || tier).slice(0, 10))}</span>
 +            ${chips || `<span class="text-xs text-dim">更新：${fetchedAgo}</span>`}
-           </div>`;
-       }
-       const detailId = `acct-detail-${a.id}`;
+@@ -2300,0 +3735,6 @@ const App = {
 +      const primaryAction = status === 'active'
 +        ? `<button class="btn btn-outline btn-xs" onclick="App.toggleAccount('${a.id}','disabled')">停用</button>`
 +        : `<button class="btn btn-success btn-xs" onclick="App.toggleAccount('${a.id}','active')">启用</button>`;
 +      const recoverAction = (status === 'error' || status === 'expired')
 +        ? `<button class="btn btn-outline btn-xs" onclick="App.recoverAccount('${a.id}')">恢复</button>`
 +        : '';
-       return `
+@@ -2302,26 +3742,11 @@ const App = {
 -      <tr>
 -        <td><input type="checkbox" class="acct-cb" data-id="${a.id}" onchange="App.updateBatchBar()"></td>
 -        <td>
@@ -2265,12 +2224,14 @@ index 4574796..b3132b0 100644
 +        <div class="account-select-cell"><input type="checkbox" class="acct-cb" data-id="${a.id}" onchange="App.updateBatchBar()"></div>
 +        <div class="account-primary">
 +          <div class="account-cell">
-+            <button class="detail-toggle" onclick="App.toggleAccountDetail('${detailId}', this)" title="展开详情">›</button>
++            <button class="detail-toggle" type="button" onclick="App.toggleAccountDetail('${detailId}', this)" title="展开详情" aria-label="展开账号详情" aria-expanded="false" aria-controls="${detailId}">
++              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="9 18 15 12 9 6"/></svg>
++            </button>
 +            <div>
 +              <div class="account-main" title="${this.esc(a.email || '-')}">${this.esc(a.email || '-')}</div>
 +              <div class="account-meta"><code>${this.esc(a.id)}</code><span>${this.esc(a.method || '-')}</span><span class="tier ${tier}">${tierLabel[tier] || tier}</span></div>
 +            </div>
-           </div>
+@@ -2329,6 +3754,56 @@ const App = {
 -        </td>
 -      </tr>
 -      <tr id="${detailId}" class="account-detail-row" style="display:none">
@@ -2333,56 +2294,131 @@ index 4574796..b3132b0 100644
 +    if (status) status.value = '';
 +    if (tier) tier.value = '';
 +    this.renderAccounts();
-   },
-
-   toggleAccountDetail(rowId, btn) {
-     const row = document.getElementById(rowId);
-     if (!row) return;
+@@ -2340,3 +3815,11 @@ const App = {
 -    const open = row.style.display === 'none';
 -    row.style.display = open ? 'table-row' : 'none';
+-    if (btn) btn.classList.toggle('open', open);
 +    const open = row.style.display === 'none' || getComputedStyle(row).display === 'none';
 +    row.style.display = open ? 'block' : 'none';
-     if (btn) btn.classList.toggle('open', open);
-   },
-
-   renderAccountDetail(a, ov) {
-     const cr = a.credits || {};
++    const accountRow = row.previousElementSibling?.classList?.contains('account-row')
++      ? row.previousElementSibling
++      : btn?.closest('.account-row');
++    if (btn) {
++      btn.classList.toggle('open', open);
++      btn.setAttribute('aria-expanded', open ? 'true' : 'false');
++      btn.setAttribute('title', open ? '收起详情' : '展开详情');
++    }
++    if (accountRow) accountRow.classList.toggle('expanded', open);
+@@ -2346,0 +3830,6 @@ const App = {
 +    const modelLimits = this.normalizeModelLimits(a);
 +    const modelLimitList = modelLimits.length
 +      ? `<div class="cooldown-list">${this.renderModelLimitChips(modelLimits, { compact: false })}</div>`
 +      : '<div class="text-sm text-dim">当前没有模型级冷却</div>';
-     const tierModels = a.tierModels || [];
-     const blocked = new Set(a.blockedModels || []);
-     const byProvider = {};
-@@ -2387,6 +3484,14 @@ const App = {
-     const lsMatches = (ov?.langServer?.instances || []).filter(i => i.accountId === a.id || i.key === a.callerKey);
-     return `
-       <div class="account-detail-wrap">
++    const tokenValue = a.apiKey || this.accountKeyById?.[a.id] || '';
++    const maskedToken = this.maskSecret(tokenValue || a.keyPrefix || '-');
+@@ -2377,2 +3866,2 @@ const App = {
+-      const color = v <= 10 ? 'var(--error)' : v <= 30 ? 'var(--warn, #f59e0b)' : 'var(--success, #10b981)';
+-      const reset = resetAt ? new Date(resetAt * 1000).toLocaleString() : '未知';
++      const state = v <= 10 ? 'error' : v <= 30 ? 'warn' : '';
++      const reset = resetAt ? new Date(resetAt * 1000).toLocaleString() : '无固定重置时间';
+@@ -2380,4 +3869,9 @@ const App = {
+-        <div class="account-detail-quota">
+-          <div class="account-detail-kv"><span>${label}</span><strong style="color:${color}">${v.toFixed(1)}%</strong></div>
+-          <div class="account-detail-bar"><span style="width:${v}%;background:${color}"></span></div>
+-          <div class="account-detail-note">重置：${this.esc(reset)}</div>
++        <div class="account-detail-quota ${state}">
++          <div class="account-detail-quota-head">
++            <span class="account-detail-quota-label">${this.esc(label)}</span>
++            <strong class="account-detail-quota-pct">${v.toFixed(1)}%</strong>
++          </div>
++          <div class="account-detail-quota-track">
++            <span class="account-detail-quota-fill" style="width:${v}%"></span>
++          </div>
++          <div class="account-detail-quota-reset">重置：${this.esc(reset)}</div>
+@@ -2387 +3881,14 @@ const App = {
+-    const lsMatches = (ov?.langServer?.instances || []).filter(i => i.accountId === a.id || i.key === a.callerKey);
++    const promptPct = cr.prompt?.limit
++      ? (cr.percent ?? ((Number(cr.prompt.remaining || 0) / Number(cr.prompt.limit || 1)) * 100))
++      : null;
++    const lsKey = a.lsKey || a.callerKey || 'default';
++    const lsInstance = (ov?.langServer?.instances || []).find(i => i.key === lsKey) || null;
++    const lsState = lsInstance?.state || (lsInstance?.running ? 'running' : 'stopped');
++    const lsStateText = lsState === 'running' ? '运行中'
++      : lsState === 'paused' ? '已暂停'
++      : lsState === 'starting' ? '启动中'
++      : '已停止';
++    const lsStateClass = lsState === 'running' ? 'running' : (lsState === 'paused' ? 'paused' : 'stopped');
++    const lsLabel = lsKey === 'default' ? '默认实例' : '代理实例';
++    const proxySummary = a.proxySummary || lsInstance?.proxy || '无代理';
++    const quotaEmpty = !cr || (!cr.planName && cr.dailyPercent == null && cr.weeklyPercent == null && promptPct == null && !cr.lastError);
+@@ -2390,7 +3897,48 @@ const App = {
+-        <div class="account-detail-grid">
+-          <div class="account-detail-card">
+-            <div class="account-detail-title">账号状态</div>
+-            <div class="account-detail-kv"><span>邮箱</span><strong>${this.esc(a.email || '-')}</strong></div>
+-            <div class="account-detail-kv"><span>Key 前缀</span><code>${this.esc(a.keyPrefix || '-')}</code></div>
+-            <div class="account-detail-kv"><span>错误次数</span><strong>${a.errorCount || 0}</strong></div>
+-            <div class="account-detail-kv"><span>最近使用</span><strong>${a.lastUsed ? new Date(a.lastUsed).toLocaleString() : '-'}</strong></div>
 +        <div class="account-detail-actions">
 +          <button class="btn btn-ghost btn-xs" onclick="App.probeAccount('${a.id}')" title="探测能力">探测</button>
 +          <button class="btn btn-ghost btn-xs" onclick="App.refreshCredits('${a.id}')" title="刷新余额">余额</button>
 +          <button class="btn btn-ghost btn-xs" onclick="App.openBlockedModal('${a.id}')" title="编辑可用模型">模型</button>
-+          <button class="btn btn-ghost btn-xs" onclick="App.copyAccountKey('${a.id}')" title="复制完整 Key">复制 Key</button>
++          <button class="btn btn-ghost btn-xs" onclick="App.copyAccountKey('${a.id}')" title="复制完整 Token">复制 Token</button>
 +          <button class="btn btn-ghost btn-xs" onclick="App.resetErrors('${a.id}')">重置错误</button>
 +          <button class="btn btn-ghost btn-xs" style="color:var(--error)" onclick="App.deleteAccount('${a.id}')">删除</button>
 +        </div>
-         <div class="account-detail-grid">
-           <div class="account-detail-card">
-             <div class="account-detail-title">账号状态</div>
-@@ -2406,7 +3511,9 @@ const App = {
-             <div class="account-detail-title">运行关联</div>
-             <div class="account-detail-kv"><span>RPM</span><strong>${a.rpmUsed ?? 0}/${a.rpmLimit ?? '-'}</strong></div>
-             <div class="account-detail-kv"><span>限流</span><strong>${a.rateLimited ? '是' : '否'}</strong></div>
-+            <div class="account-detail-kv"><span>模型冷却</span><strong>${modelLimits.length || '无'}</strong></div>
-             <div class="account-detail-kv"><span>LS 实例</span><strong>${lsMatches.length || '-'}</strong></div>
-+            ${modelLimitList}
-           </div>
-         </div>
-         <div class="account-detail-card account-detail-models">
-@@ -2641,6 +3748,34 @@ const App = {
-     this.toast('账号已删除');
-   },
-
++        <div class="account-detail-main">
++          <div class="account-detail-side">
++            <div class="account-detail-card">
++              <div class="account-detail-title">账号状态</div>
++              <div class="account-detail-kv"><span>邮箱</span><strong>${this.esc(a.email || '-')}</strong></div>
++              <div class="account-token-line">
++                <span class="text-dim">Token</span>
++                <code class="account-token-mask" title="完整 Token 不在页面明文展示">${this.esc(maskedToken)}</code>
++                <button class="btn btn-outline btn-xs account-token-copy" onclick="App.copyAccountKey('${a.id}')" title="复制完整 Token">复制</button>
++              </div>
++              <div class="account-detail-kv"><span>错误次数</span><strong>${a.errorCount || 0}</strong></div>
++              <div class="account-detail-kv"><span>最近使用</span><strong>${a.lastUsed ? new Date(a.lastUsed).toLocaleString() : '-'}</strong></div>
++            </div>
++            <div class="account-detail-card">
++              <div class="account-detail-title">运行关联</div>
++              <div class="runtime-grid">
++                <div class="runtime-metric">
++                  <div class="runtime-label">RPM</div>
++                  <div class="runtime-value">${a.rpmUsed ?? 0}/${a.rpmLimit ?? '-'}</div>
++                </div>
++                <div class="runtime-metric">
++                  <div class="runtime-label">限流</div>
++                  <div class="runtime-value">${a.rateLimited ? '是' : '否'}</div>
++                </div>
++                <div class="runtime-metric">
++                  <div class="runtime-label">模型冷却</div>
++                  <div class="runtime-value">${modelLimits.length || '无'}</div>
++                </div>
++                <div class="runtime-metric">
++                  <div class="runtime-label">代理</div>
++                  <div class="runtime-value">${this.esc(a.proxyEnabled ? '代理' : '无代理')}</div>
++                </div>
++                <div class="runtime-ls">
++                  <div class="runtime-label">LS 实例</div>
++                  <div class="runtime-value">${this.esc(lsLabel)} <span class="badge ${lsStateClass}">${this.esc(lsStateText)}</span></div>
++                  <div class="runtime-sub">${this.esc(lsKey)} · 端口 ${lsInstance?.port || '-'} · ${this.esc(proxySummary)}</div>
++                </div>
++              </div>
++              ${modelLimitList}
++            </div>
+@@ -2400,0 +3949 @@ const App = {
++            ${quotaEmpty ? '<div class="text-sm text-dim">额度尚未获取，可点击“余额”刷新。</div>' : ''}
+@@ -2402,0 +3952 @@ const App = {
++            ${quotaBlock('Prompt', promptPct, null)}
+@@ -2405,6 +3954,0 @@ const App = {
+-          <div class="account-detail-card">
+-            <div class="account-detail-title">运行关联</div>
+-            <div class="account-detail-kv"><span>RPM</span><strong>${a.rpmUsed ?? 0}/${a.rpmLimit ?? '-'}</strong></div>
+-            <div class="account-detail-kv"><span>限流</span><strong>${a.rateLimited ? '是' : '否'}</strong></div>
+-            <div class="account-detail-kv"><span>LS 实例</span><strong>${lsMatches.length || '-'}</strong></div>
+-          </div>
+@@ -2643,0 +4188,28 @@ const App = {
 +  async recoverAccounts(selectedOnly = false) {
 +    const ids = this._getSelectedIds();
 +    if (selectedOnly && !ids.length) return this.toast('请先勾选账号', 'error');
@@ -2411,38 +2447,89 @@ index 4574796..b3132b0 100644
 +    this.loadAccounts();
 +  },
 +
-   // ─── Batch selection ──────────────────────────
-   _getSelectedIds() {
-     return [...document.querySelectorAll('.acct-cb:checked')].map(cb => cb.dataset.id);
-@@ -2652,14 +3787,17 @@ const App = {
-     const ids = this._getSelectedIds();
-     const bar = document.getElementById('batch-bar');
-     if (ids.length > 0) {
+@@ -2655 +4227 @@ const App = {
 -      bar.style.display = 'flex';
 +      bar.classList.add('active');
-       document.getElementById('batch-count').textContent = `已选 ${ids.length} 个`;
-     } else {
+@@ -2658 +4230 @@ const App = {
 -      bar.style.display = 'none';
 +      bar.classList.remove('active');
-     }
-     const allCbs = this._getAllCbs();
-     const selectAll = document.getElementById('acct-select-all');
+@@ -2662 +4234,4 @@ const App = {
 -    if (selectAll) selectAll.checked = allCbs.length > 0 && ids.length === allCbs.length;
 +    if (selectAll) {
 +      selectAll.checked = allCbs.length > 0 && ids.length === allCbs.length;
 +      selectAll.indeterminate = ids.length > 0 && ids.length < allCbs.length;
 +    }
-   },
-   onSelectAllToggle(checked) {
-     this._getAllCbs().forEach(cb => cb.checked = checked);
-@@ -2873,19 +4011,40 @@ const App = {
-   },
-
-   // ─── Logs ────────────────────────────────────
+@@ -2801,0 +4377 @@ const App = {
++    this.validateGlobalProxyForm(false);
+@@ -2819,0 +4396,49 @@ const App = {
++  _setFieldError(id, message, visible) {
++    const input = document.getElementById(id);
++    const err = document.getElementById(id + '-error');
++    if (input) input.classList.toggle('invalid', !!visible);
++    if (err) {
++      err.textContent = message;
++      err.classList.toggle('visible', !!visible);
++    }
++  },
++
++  validateGlobalProxyForm(showEmpty = true) {
++    const hostEl = document.getElementById('proxy-host');
++    const portEl = document.getElementById('proxy-port');
++    const host = (hostEl?.value || '').trim();
++    const portRaw = (portEl?.value || '').trim();
++    const hostPattern = /^(localhost|(?:\d{1,3}\.){3}\d{1,3}|[a-z0-9][a-z0-9.-]*[a-z0-9])$/i;
++    let ok = true;
++
++    if (!host && showEmpty) {
++      this._setFieldError('proxy-host', '请输入代理主机。', true);
++      ok = false;
++    } else if (host && (!hostPattern.test(host) || host.includes('://'))) {
++      this._setFieldError('proxy-host', '请输入合法的 IP、localhost 或域名，不要包含协议头。', true);
++      ok = false;
++    } else {
++      this._setFieldError('proxy-host', '', false);
++    }
++
++    const port = Number(portRaw);
++    if (!portRaw && showEmpty) {
++      this._setFieldError('proxy-port', '请输入代理端口。', true);
++      ok = false;
++    } else if (portRaw && (!Number.isInteger(port) || port < 1 || port > 65535)) {
++      this._setFieldError('proxy-port', '端口必须在 1 到 65535 之间。', true);
++      ok = false;
++    } else {
++      this._setFieldError('proxy-port', '', false);
++    }
++
++    return ok;
++  },
++
++  setButtonBusy(id, busy, label = '保存') {
++    const btn = document.getElementById(id);
++    if (!btn) return;
++    btn.disabled = !!busy;
++    btn.innerHTML = busy ? '<span class="spinner"></span> 保存中' : label;
++  },
++
+@@ -2828,4 +4453,10 @@ const App = {
+-    if (!cfg.host) return this.toast('请输入代理主机', 'error');
+-    await this.api('PUT', '/proxy/global', cfg);
+-    this.toast('全局代理已保存');
+-    this.loadProxy();
++    if (!this.validateGlobalProxyForm()) return this.toast('请先修正代理配置', 'error');
++    this.setButtonBusy('proxy-save-btn', true);
++    try {
++      const r = await this.api('PUT', '/proxy/global', cfg);
++      if (r.error) return this.toast(r.error, 'error');
++      this.toast('全局代理已保存');
++      this.loadProxy();
++    } finally {
++      this.setButtonBusy('proxy-save-btn', false);
++    }
+@@ -2876 +4507 @@ const App = {
 -  loadLogs() {
 +  async loadLogs() {
-     this.logEntries = [];
-     document.getElementById('log-container').innerHTML = '';
+@@ -2879,10 +4510,31 @@ const App = {
 -    this.sseConn = new EventSource('/dashboard/api/logs/stream');
 -    this.sseConn.onmessage = (e) => {
 -      try {
@@ -2484,50 +2571,55 @@ index 4574796..b3132b0 100644
 +    } catch (e) {
 +      if (e.name !== 'AbortError') this.toast(e.message || '日志流连接失败', 'error');
 +    }
-   },
-
-   renderLogEntry(entry) {
-@@ -3165,12 +4324,12 @@ const App = {
-
-     // Top metric cards — add Tokens and Credits alongside existing counters
-     document.getElementById('stats-cards').innerHTML = `
+@@ -2910,0 +4563,11 @@ const App = {
++  setLogLevel(level) {
++    document.getElementById('log-level').value = level;
++    this.filterLogs();
++  },
++
++  updateLogLevelTags(level) {
++    document.querySelectorAll('.log-level-tag').forEach(btn => {
++      btn.classList.toggle('active', btn.dataset.logLevel === level);
++    });
++  },
++
+@@ -2915,0 +4579 @@ const App = {
++    this.updateLogLevelTags(levelFilter);
+@@ -3168,3 +4832,3 @@ const App = {
 -      <div class="card info"><div class="card-header"><div class="card-title">总请求</div></div><div class="card-value">${d.totalRequests || 0}</div></div>
 -      <div class="card success"><div class="card-header"><div class="card-title">成功</div></div><div class="card-value">${d.successCount || 0}</div></div>
 -      <div class="card error"><div class="card-header"><div class="card-title">错误</div></div><div class="card-value">${d.errorCount || 0}</div></div>
 +      <div class="card info"><div class="card-header"><div class="card-title">总请求</div></div><div class="card-value">${this.formatCompactNumber(d.totalRequests || 0)}</div></div>
 +      <div class="card success"><div class="card-header"><div class="card-title">成功</div></div><div class="card-value">${this.formatCompactNumber(d.successCount || 0)}</div></div>
 +      <div class="card error"><div class="card-header"><div class="card-title">错误</div></div><div class="card-value">${this.formatCompactNumber(d.errorCount || 0)}</div></div>
-       <div class="card accent"><div class="card-header"><div class="card-title">成功率</div></div><div class="card-value">${d.totalRequests > 0 ? ((d.successCount/d.totalRequests)*100).toFixed(1) : 0}%</div></div>
-       <div class="card info"><div class="card-header"><div class="card-title">Token 总消耗</div></div><div class="card-value">${this._fmtTokens(totalTokens)}</div></div>
+@@ -3173 +4837 @@ const App = {
 -      <div class="card accent"><div class="card-header"><div class="card-title">Credits 总花销</div></div><div class="card-value">${totalCredits.toFixed(1)}</div></div>
 +      <div class="card accent"><div class="card-header"><div class="card-title">Credits 总花销</div></div><div class="card-value">${this.formatCompactNumber(totalCredits, { digits: 1 })}</div></div>
-     `;
-     this.renderStatsCharts(d);
-
-@@ -3347,12 +4506,12 @@ const App = {
-       </div>
-       <div class="card">
-         <div class="card-header"><div class="card-title">对话池</div></div>
+@@ -3350 +5014 @@ const App = {
 -        <div class="card-value">${pool.size || 0}</div>
 +        <div class="card-value">${this.formatCompactNumber(pool.size || 0)}</div>
-         <div class="card-sub">上限 ${pool.maxSize || 0} · TTL ${Math.round((pool.ttlMs || 0) / 60000)} 分钟</div>
-       </div>
-       <div class="card">
-         <div class="card-header"><div class="card-title">存储次数</div></div>
+@@ -3355 +5019 @@ const App = {
 -        <div class="card-value">${pool.stores || 0}</div>
 +        <div class="card-value">${this.formatCompactNumber(pool.stores || 0)}</div>
-         <div class="card-sub">过期 ${pool.expired || 0} · 淘汰 ${pool.evictions || 0}</div>
-       </div>
-     `;
-@@ -3426,6 +4585,42 @@ const App = {
-     if (h > 0) return `${h}时 ${m}分`;
-     return `${m}分 ${Math.floor(secs % 60)}秒`;
-   },
+@@ -3429 +5093,52 @@ const App = {
+-  copyKey(key) {
 +  fmtRemainingMs(ms) {
 +    const secs = Math.max(0, Math.ceil(Number(ms || 0) / 1000));
 +    if (secs >= 3600) return `${Math.floor(secs / 3600)}h ${Math.floor((secs % 3600) / 60)}m`;
 +    if (secs >= 60) return `${Math.floor(secs / 60)}m ${secs % 60}s`;
 +    return `${secs}s`;
++  },
++  maskSecret(value) {
++    const s = String(value || '');
++    if (!s || s === '-') return '-';
++    if (s.length <= 16) return `${s.slice(0, 4)}...${s.slice(-3)}`;
++    return `${s.slice(0, 8)}...${s.slice(-4)}`;
++  },
++  compactModelName(model) {
++    return String(model || '')
++      .replace(/^model-/, '')
++      .replace(/-thinking$/, '-think')
++      .replace(/-priority$/, '-prio');
 +  },
 +  normalizeModelLimits(a) {
 +    const now = Date.now();
@@ -2547,30 +2639,31 @@ index 4574796..b3132b0 100644
 +    const max = opts.compact ? 1 : 8;
 +    const items = details.slice(0, max).map(x => {
 +      const title = `${x.model} 冷却到 ${new Date(x.until).toLocaleString()}`;
-+      return `<span class="cooldown-chip" title="${this.esc(title)}"><span>${this.esc(x.model)}</span>${this.fmtRemainingMs(x.remainingMs)}</span>`;
++      return `<span class="cooldown-chip" title="${this.esc(title)}">
++        <span class="cooldown-name">${this.esc(this.compactModelName(x.model))}</span>
++        <strong class="cooldown-time">${this.fmtRemainingMs(x.remainingMs)}</strong>
++      </span>`;
 +    });
 +    if (opts.compact && details.length > max) {
-+      items.push(`<span class="cooldown-chip" title="还有 ${details.length - max} 个模型冷却中"><span>+${details.length - max}</span></span>`);
++      items.push(`<span class="cooldown-chip more" title="还有 ${details.length - max} 个模型冷却中"><span class="cooldown-name">+${details.length - max}</span></span>`);
 +    }
 +    return items.join('');
 +  },
 +  copyAccountKey(id) {
 +    const key = this.accountKeyById[id];
-+    if (!key) return this.toast('未找到完整 Key，请刷新账号列表', 'error');
-+    return this.copyKey(key);
++    if (!key) return this.toast('未找到完整 Token，请刷新账号列表', 'error');
++    return this.copyKey(key, 'Token');
 +  },
-   copyKey(key) {
-     const fallback = () => {
-       try {
-@@ -3452,7 +4647,10 @@ const App = {
-   esc(s) { return String(s == null ? '' : s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;'); },
- };
-
++  copyKey(key, label = 'API Key') {
+@@ -3441 +5156 @@ const App = {
+-        this.toast(ok ? 'API Key 已复制' : '复制失败，请手动选择', ok ? 'success' : 'error');
++        this.toast(ok ? `${label} 已复制` : '复制失败，请手动选择', ok ? 'success' : 'error');
+@@ -3447 +5162 @@ const App = {
+-      navigator.clipboard.writeText(key).then(() => this.toast('API Key 已复制')).catch(fallback);
++      navigator.clipboard.writeText(key).then(() => this.toast(`${label} 已复制`)).catch(fallback);
+@@ -3455 +5170,4 @@ const App = {
 -window.addEventListener('DOMContentLoaded', () => App.init());
 +window.addEventListener('DOMContentLoaded', () => {
 +  App.init();
 +  setTimeout(() => App.clearWindsurfPasswordField(), 250);
 +});
- </script>
- </body>
- </html>

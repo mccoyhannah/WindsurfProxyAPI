@@ -1,0 +1,474 @@
+diff --git a/src/dashboard/api.js b/src/dashboard/api.js
+index dadcb6c..74bc689 100644
+--- a/src/dashboard/api.js
++++ b/src/dashboard/api.js
+@@ -21,7 +21,7 @@ import { poolStats as convPoolStats, poolClear as convPoolClear } from '../conve
+ import { getLogs, subscribeToLogs, unsubscribeFromLogs } from './logger.js';
+ import { getProxyConfig, setGlobalProxy, setAccountProxy, removeProxy, getEffectiveProxy } from './proxy-config.js';
+ import { MODELS, MODEL_TIER_ACCESS as _TIER_TABLE, getTierModels as _getTierModels, getModelCatalogSummary } from '../models.js';
+-import { windsurfLogin, refreshFirebaseToken, reRegisterWithCodeium, parseLoginCredentials } from './windsurf-login.js';
++import { windsurfLogin, windsurfAuth1PostAuth, refreshFirebaseToken, reRegisterWithCodeium, parseLoginCredentials } from './windsurf-login.js';
+ import { getModelAccessConfig, setModelAccessMode, setModelAccessList, addModelToList, removeModelFromList } from './model-access.js';
+ import { checkMessageRateLimit } from '../windsurf-api.js';
+
+@@ -32,6 +32,14 @@ function previewSecret(value) {
+   return `${s.slice(0, 12)}...${s.slice(-8)}`;
+ }
+
++function sanitizeDashboardErrorText(text) {
++  return String(text || '请求失败')
++    .replace(/auth1_[A-Za-z0-9._-]+/g, 'auth1_***')
++    .replace(/devin-session-token\$[A-Za-z0-9._-]+/g, 'devin-session-token$***')
++    .replace(/eyJ[A-Za-z0-9._-]+/g, 'eyJ***')
++    .slice(0, 500);
++}
++
+ function findProxyForLsKey(key) {
+   if (key === 'default') return null;
+   const proxyConfig = getProxyConfig();
+@@ -542,14 +550,50 @@ export async function handleDashboardApi(method, subpath, body, req, res) {
+         accountId: result.accountId || '',
+         orgs: result.orgs || [],
+         requiresOrgSelection: !!result.requiresOrgSelection,
++        method: 'password',
+         account: account ? { id: account.id, email: account.email, status: account.status } : null,
+       });
+-    } catch (err) {
+-      return json(res, 400, { error: err.message });
+-    }
+-  }
+-
+-  // ─── OAuth login (Google / GitHub via Firebase) ────────
++    } catch (err) {
++      return json(res, 400, { error: sanitizeDashboardErrorText(err?.message || err) });
++    }
++  }
++
++  if (subpath === '/windsurf-auth1' && method === 'POST') {
++    try {
++      const { email, auth1Token, proxy: loginProxy, autoAdd } = body;
++      const proxy = loginProxy?.host ? loginProxy : getProxyConfig().global;
++
++      const result = await windsurfAuth1PostAuth(email, auth1Token, proxy);
++
++      let account = null;
++      if (autoAdd !== false) {
++        account = addAccountBySessionToken(result.sessionToken || result.apiKey, result.name || result.email || email, {
++          apiServerUrl: result.apiServerUrl,
++        });
++        if (loginProxy?.host) setAccountProxy(account.id, loginProxy);
++        ensureLsForAccount(account.id)
++          .then(() => probeAccount(account.id))
++          .catch(e => log.warn(`Auth1 auto-probe failed: ${e.message}`));
++      }
++
++      return json(res, 200, {
++        success: true,
++        keyPreview: previewSecret(result.apiKey),
++        name: result.name,
++        email: result.email,
++        apiServerUrl: result.apiServerUrl,
++        accountId: result.accountId || '',
++        orgs: result.orgs || [],
++        requiresOrgSelection: !!result.requiresOrgSelection,
++        method: 'auth1',
++        account: account ? { id: account.id, email: account.email, status: account.status } : null,
++      });
++    } catch (err) {
++      return json(res, 400, { error: sanitizeDashboardErrorText(err?.message || err) });
++    }
++  }
++
++  // ─── OAuth login (Google / GitHub via Firebase) ────────
+   // POST /oauth-login — accepts Firebase idToken from client-side OAuth
+   if (subpath === '/oauth-login' && method === 'POST') {
+     try {
+diff --git a/src/dashboard/index.html b/src/dashboard/index.html
+index 9fe8b2c..7862ead 100644
+--- a/src/dashboard/index.html
++++ b/src/dashboard/index.html
+@@ -578,11 +578,23 @@ input:-webkit-autofill:focus {
+   background: var(--warn-soft);
+   color: var(--warn);
+ }
++.wl-batch-chip.auth1 {
++  border-color: rgba(69,185,255,.28);
++  background: var(--info-soft);
++  color: var(--info);
++}
+ .wl-batch-chip span {
+   overflow: hidden;
+   text-overflow: ellipsis;
+   white-space: nowrap;
+ }
++.wl-batch-chip small {
++  margin-left: 6px;
++  color: currentColor;
++  opacity: .78;
++  font-size: 10px;
++  white-space: nowrap;
++}
+ .wl-auto-add-option {
+   margin-left: auto;
+ }
+@@ -2166,11 +2178,11 @@ tbody tr:hover td { background: rgba(53,208,189,.055); }
+           <div class="login-card-import-head">
+             <div>
+               <div class="login-card-import-title">整条卡密 / 批量卡密</div>
+-              <div class="login-card-import-desc">每行一条：邮箱----密码----session token。多行会顺序登录；token 只保留在这里，不会在本页登录时使用。</div>
++              <div class="login-card-import-desc">每行一条：邮箱----密码----session token，或邮箱----auth1_短期令牌----时间。Auth1 会先换成 session token 再入池。</div>
+             </div>
+             <span class="badge info no-dot" id="wl-card-mode">自动识别</span>
+           </div>
+-          <textarea id="wl-card" class="textarea wl-card-textarea" rows="5" placeholder="your-email1@example.com----你的密码1----session token&#10;your-email2@example.com----你的密码2----session token" autocomplete="off" spellcheck="false" autocapitalize="off" oninput="App.updateWindsurfCardStatus()"></textarea>
++          <textarea id="wl-card" class="textarea wl-card-textarea" rows="5" placeholder="your-email1@example.com----你的密码1----session token&#10;your-email2@example.com----auth1_短期令牌----2026-05-14 04:10:02" autocomplete="off" spellcheck="false" autocapitalize="off" oninput="App.updateWindsurfCardStatus()"></textarea>
+           <div id="wl-batch-preview" class="wl-batch-preview hidden"></div>
+           <div class="field-row-actions wl-card-actions">
+             <button class="btn btn-outline btn-sm" onclick="App.applyWindsurfCard()">
+@@ -2179,7 +2191,7 @@ tbody tr:hover td { background: rgba(53,208,189,.055); }
+             </button>
+             <button class="btn btn-success btn-sm" onclick="App.windsurfBatchLogin()" id="wl-batch-btn">
+               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+-              批量登录入池
++              批量登录/换票入池
+             </button>
+             <button class="btn btn-ghost btn-sm" onclick="App.clearWindsurfCard()">
+               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"><path d="M3 6h18"/><path d="M8 6V4h8v2"/><path d="M6 6l1 14h10l1-14"/><path d="M10 11v5"/><path d="M14 11v5"/></svg>
+@@ -2261,7 +2273,7 @@ tbody tr:hover td { background: rgba(53,208,189,.055); }
+       <div class="section-body tight">
+         <div class="table-wrap">
+           <table id="wl-history-table">
+-            <thead><tr><th>时间</th><th>邮箱</th><th>状态</th><th>代理</th><th>操作</th></tr></thead>
++            <thead><tr><th>时间</th><th>邮箱</th><th>状态</th><th>方式</th><th>代理</th><th>操作</th></tr></thead>
+             <tbody></tbody>
+           </table>
+         </div>
+@@ -3134,15 +3146,18 @@ const App = {
+       return { ok: false, line: rawLine, lineNo, reason: '格式不完整' };
+     }
+     const email = (parts[0] || '').trim();
+-    const password = (parts[1] || '').trim();
+-    const token = parts.slice(2).join('----').trim();
++    const secret = (parts[1] || '').trim();
++    const extra = parts.slice(2).join('----').trim();
+     if (!email.includes('@')) {
+       return { ok: false, line: rawLine, lineNo, reason: '邮箱格式不正确' };
+     }
+-    if (!password) {
+-      return { ok: false, line: rawLine, lineNo, reason: '缺少密码' };
++    if (!secret) {
++      return { ok: false, line: rawLine, lineNo, reason: '缺少密码或 Auth1 令牌' };
++    }
++    if (secret.startsWith('auth1_')) {
++      return { ok: true, kind: 'auth1', email, auth1Token: secret, issuedAt: extra, line: rawLine, lineNo };
+     }
+-    return { ok: true, email, password, token, line: rawLine, lineNo };
++    return { ok: true, kind: 'password', email, password: secret, token: extra, line: rawLine, lineNo };
+   },
+
+   _parseWindsurfCardBatch(raw) {
+@@ -3159,7 +3174,14 @@ const App = {
+       if (parsed.ok) valid.push(parsed);
+       else invalid.push(parsed);
+     });
+-    return { lines, valid, invalid, tokenCount: valid.filter(x => x.token).length };
++    return {
++      lines,
++      valid,
++      invalid,
++      tokenCount: valid.filter(x => x.token).length,
++      auth1Count: valid.filter(x => x.kind === 'auth1').length,
++      passwordCount: valid.filter(x => x.kind !== 'auth1').length,
++    };
+   },
+
+   _parseWindsurfCardText(raw) {
+@@ -3177,7 +3199,9 @@ const App = {
+     }
+     const chips = [];
+     for (const item of (batch.valid || []).slice(0, 6)) {
+-      chips.push(`<span class="wl-batch-chip" title="第 ${item.lineNo} 行"><span>${this.esc(item.email)}</span></span>`);
++      const isAuth1 = item.kind === 'auth1';
++      const label = isAuth1 ? 'Auth1' : '密码';
++      chips.push(`<span class="wl-batch-chip ${isAuth1 ? 'auth1' : ''}" title="第 ${item.lineNo} 行 · ${label}"><span>${this.esc(item.email)}</span><small>${label}</small></span>`);
+     }
+     const rest = (batch.valid || []).length - 6;
+     if (rest > 0) chips.push(`<span class="wl-batch-chip"><span>+${rest} 条</span></span>`);
+@@ -3211,20 +3235,25 @@ const App = {
+     if (batch.valid.length > 1) {
+       if (modeEl) modeEl.textContent = `批量 ${batch.valid.length}`;
+       const invalidText = batch.invalid.length ? `，${batch.invalid.length} 行待修正` : '';
+-      this.setWindsurfCardStatus(`已识别 ${batch.valid.length} 个账号${invalidText}${autoAdd ? '，登录成功会自动入池' : ''}`, batch.invalid.length ? 'warn' : 'success');
++      const methodText = `${batch.passwordCount ? `密码 ${batch.passwordCount}` : ''}${batch.passwordCount && batch.auth1Count ? ' / ' : ''}${batch.auth1Count ? `Auth1 ${batch.auth1Count}` : ''}`;
++      this.setWindsurfCardStatus(`已识别 ${batch.valid.length} 个账号（${methodText}）${invalidText}${autoAdd ? '，成功会自动入池' : ''}`, batch.invalid.length ? 'warn' : 'success');
+       return;
+     }
+     if (batch.valid.length === 1) {
+       if (modeEl) modeEl.textContent = '单条';
+       const parsed = batch.valid[0];
+       const invalidText = batch.invalid.length ? `，另有 ${batch.invalid.length} 行待修正` : '';
+-      this.setWindsurfCardStatus(`${parsed.token ? '已识别邮箱和密码，session token 不会在本页使用' : '已识别邮箱和密码'}${invalidText}`, batch.invalid.length ? 'warn' : 'success');
++      if (parsed.kind === 'auth1') {
++        this.setWindsurfCardStatus(`已识别 Auth1 短期令牌，入池时会换成 session token${invalidText}`, batch.invalid.length ? 'warn' : 'success');
++      } else {
++        this.setWindsurfCardStatus(`${parsed.token ? '已识别邮箱和密码，session token 不会在本页使用' : '已识别邮箱和密码'}${invalidText}`, batch.invalid.length ? 'warn' : 'success');
++      }
+       return;
+     }
+     if (modeEl) modeEl.textContent = '自动识别';
+     if (card) {
+       const invalidText = batch.invalid.length ? `：${batch.invalid[0].reason}` : '';
+-      this.setWindsurfCardStatus(`未识别到可登录卡密${invalidText}，请使用：邮箱----密码----session token`, 'warn');
++      this.setWindsurfCardStatus(`未识别到可处理卡密${invalidText}，请使用：邮箱----密码----session token 或 邮箱----auth1_令牌----时间`, 'warn');
+       return;
+     }
+     const pastedInEmail = this._parseWindsurfCardText(email);
+@@ -3254,10 +3283,14 @@ const App = {
+       return null;
+     }
+     emailEl.value = parsed.email;
+-    passEl.value = parsed.password;
++    passEl.value = parsed.kind === 'auth1' ? '' : parsed.password;
+     this.renderWindsurfCardPreview(batch);
+     const extra = batch.valid.length > 1 ? `，当前填入第 1 条，剩余 ${batch.valid.length - 1} 条可批量登录` : '';
+-    this.setWindsurfCardStatus(`${parsed.token ? '已拆分邮箱和密码，session token 仅保留在卡密框中' : '已拆分邮箱和密码'}${extra}`, 'success');
++    if (parsed.kind === 'auth1') {
++      this.setWindsurfCardStatus(`已识别 Auth1 卡，令牌只留在卡密框中；请直接登录/批量入池${extra}`, 'success');
++    } else {
++      this.setWindsurfCardStatus(`${parsed.token ? '已拆分邮箱和密码，session token 仅保留在卡密框中' : '已拆分邮箱和密码'}${extra}`, 'success');
++    }
+     return parsed;
+   },
+
+@@ -3268,6 +3301,11 @@ const App = {
+       this.toast('未识别到卡密格式', 'error');
+       return null;
+     }
++    if (parsed.kind === 'auth1') {
++      document.getElementById('wl-batch-btn')?.focus();
++      this.toast(batch.valid.length > 1 ? `已识别 Auth1 卡，可批量处理 ${batch.valid.length} 条` : '已识别 Auth1 卡，请直接入池');
++      return parsed;
++    }
+     document.getElementById('wl-password')?.focus();
+     this.toast(batch.valid.length > 1 ? `已填入首条，可批量处理 ${batch.valid.length} 条` : '已拆分邮箱和密码');
+     return parsed;
+@@ -3302,7 +3340,7 @@ const App = {
+     }
+     if (batchBtn) {
+       batchBtn.disabled = busy;
+-      batchBtn.innerHTML = busy ? `<span class="spinner"></span> ${this.esc(label)}` : `${batchIcon} 批量登录入池`;
++      batchBtn.innerHTML = busy ? `<span class="spinner"></span> ${this.esc(label)}` : `${batchIcon} 批量登录/换票入池`;
+     }
+   },
+
+@@ -3330,6 +3368,7 @@ const App = {
+         <table class="wl-result-table">
+           <tr><td>邮箱</td><td>${this.esc(r.email)}</td></tr>
+           <tr><td>姓名</td><td>${this.esc(r.name || '-')}</td></tr>
++          ${r.method ? `<tr><td>方式</td><td>${r.method === 'auth1' ? 'Auth1 换票' : '密码登录'}</td></tr>` : ''}
+           <tr><td>凭据预览</td><td><code>${this.esc(r.keyPreview || '-')}</code></td></tr>
+           ${(r.orgs || []).length ? `<tr><td>组织</td><td>${(r.orgs || []).length} 个${r.requiresOrgSelection ? '（已使用默认返回）' : ''}</td></tr>` : ''}
+           ${r.account ? `<tr><td>账号 ID</td><td><code>${this.esc(r.account.id)}</code> <span class="badge active">${this.esc(r.account.status)}</span></td></tr>` : ''}
+@@ -3360,6 +3399,7 @@ const App = {
+       <tr>
+         <td class="text-sm nowrap">#${idx + 1}</td>
+         <td>${this.esc(item.email)}</td>
++        <td><span class="badge ${item.method === 'auth1' ? 'info' : 'muted'} no-dot">${item.method === 'auth1' ? 'Auth1' : '密码'}</span></td>
+         <td><span class="badge ${item.ok ? 'active' : 'error'}">${item.ok ? '成功' : '失败'}</span></td>
+         <td class="text-sm">${item.ok ? this.esc(item.response?.keyPreview || '-') : this.esc(item.error || '未知错误')}</td>
+       </tr>
+@@ -3368,6 +3408,7 @@ const App = {
+       <tr>
+         <td class="text-sm nowrap">第 ${item.lineNo} 行</td>
+         <td class="text-dim">原文已隐藏</td>
++        <td><span class="badge muted no-dot">-</span></td>
+         <td><span class="badge warn">格式无效</span></td>
+         <td class="text-sm">${this.esc(item.reason)}</td>
+       </tr>
+@@ -3383,7 +3424,7 @@ const App = {
+       <div class="section-body tight">
+         <div class="table-wrap">
+           <table>
+-            <thead><tr><th>序号</th><th>账号</th><th>状态</th><th>结果</th></tr></thead>
++            <thead><tr><th>序号</th><th>账号</th><th>方式</th><th>状态</th><th>结果</th></tr></thead>
+             <tbody>${rows}${invalidRows}</tbody>
+           </table>
+         </div>
+@@ -3395,6 +3436,9 @@ const App = {
+     if (cardBatch.valid.length > 1 || (cardBatch.valid.length && cardBatch.invalid.length)) {
+       return this.windsurfBatchLogin();
+     }
++    if (cardBatch.valid.length === 1 && cardBatch.valid[0].kind === 'auth1') {
++      return this.windsurfBatchLogin();
++    }
+     this.parseWindsurfCard('wl-card') || this.parseWindsurfCard('wl-email');
+     const email = document.getElementById('wl-email').value.trim();
+     const password = document.getElementById('wl-password').value.trim();
+@@ -3405,7 +3449,7 @@ const App = {
+
+     this.setWindsurfLoginBusy(true, '登录中...');
+
+-    const entry = { time: new Date().toISOString(), email, proxy: proxy ? `${proxy.type}://${proxy.host}:${proxy.port}` : '全局', status: 'pending' };
++    const entry = { time: new Date().toISOString(), email, method: 'password', proxy: proxy ? `${proxy.type}://${proxy.host}:${proxy.port}` : '全局', status: 'pending' };
+
+     try {
+       const r = await this.api('POST', '/windsurf-login', { email, password, proxy, autoAdd });
+@@ -3455,23 +3499,29 @@ const App = {
+     try {
+       for (let i = 0; i < batch.valid.length; i++) {
+         const item = batch.valid[i];
+-        this.setWindsurfLoginBusy(true, `${i + 1}/${batch.valid.length} 登录中...`);
+-        this.setWindsurfCardStatus(`正在登录 ${i + 1}/${batch.valid.length}：${item.email}`, 'muted');
+-        const entry = { time: new Date().toISOString(), email: item.email, proxy: proxy ? `${proxy.type}://${proxy.host}:${proxy.port}` : '全局', status: 'pending' };
++        const isAuth1 = item.kind === 'auth1';
++        const methodLabel = isAuth1 ? 'Auth1 换票' : '密码登录';
++        this.setWindsurfLoginBusy(true, `${i + 1}/${batch.valid.length} ${isAuth1 ? '换票中...' : '登录中...'}`);
++        this.setWindsurfCardStatus(`正在${methodLabel} ${i + 1}/${batch.valid.length}：${item.email}`, 'muted');
++        const entry = { time: new Date().toISOString(), email: item.email, method: isAuth1 ? 'auth1' : 'password', proxy: proxy ? `${proxy.type}://${proxy.host}:${proxy.port}` : '全局', status: 'pending' };
+         try {
+-          const r = await this.api('POST', '/windsurf-login', { email: item.email, password: item.password, proxy, autoAdd });
++          const endpoint = isAuth1 ? '/windsurf-auth1' : '/windsurf-login';
++          const payload = isAuth1
++            ? { email: item.email, auth1Token: item.auth1Token, proxy, autoAdd }
++            : { email: item.email, password: item.password, proxy, autoAdd };
++          const r = await this.api('POST', endpoint, payload);
+           if (r.success) {
+             entry.status = 'success';
+             entry.apiKey = r.keyPreview || '';
+-            results.push({ ok: true, email: item.email, card: item, response: r });
++            results.push({ ok: true, email: item.email, method: entry.method, card: item, response: r });
+           } else {
+             const error = r.error || '未知错误';
+             entry.status = 'error: ' + error;
+-            results.push({ ok: false, email: item.email, card: item, error });
++            results.push({ ok: false, email: item.email, method: entry.method, card: item, error });
+           }
+         } catch (err) {
+           entry.status = 'error: ' + err.message;
+-          results.push({ ok: false, email: item.email, card: item, error: err.message });
++          results.push({ ok: false, email: item.email, method: entry.method, card: item, error: err.message });
+         }
+         entries.push(entry);
+       }
+@@ -3505,20 +3555,22 @@ const App = {
+   renderLoginHistory() {
+     const tbody = document.querySelector('#wl-history-table tbody');
+     if (!tbody) return;
+-    tbody.innerHTML = this.loginHistory.map((h, i) => {
+-      const ok = h.status === 'success';
+-      return `<tr>
+-        <td class="text-sm nowrap">${new Date(h.time).toLocaleString()}</td>
+-        <td>${this.esc(h.email)}</td>
+-        <td>
+-          <span class="badge ${ok ? 'active' : 'error'}">${ok ? '成功' : '失败'}</span>
+-          ${!ok ? `<div class="text-xs" style="color:var(--error);margin-top:3px;max-width:240px;overflow:hidden;text-overflow:ellipsis">${this.esc((h.status||'').replace('error: ',''))}</div>` : ''}
+-        </td>
+-        <td class="text-sm">${this.esc(h.proxy || '-')}</td>
+-        <td><button class="btn btn-ghost btn-xs" onclick="App.removeLoginHistory(${i})">删除</button></td>
+-      </tr>`;
+-    }).join('') || '<tr class="empty-row"><td colspan="5">暂无登录记录</td></tr>';
+-  },
++    tbody.innerHTML = this.loginHistory.map((h, i) => {
++      const ok = h.status === 'success';
++      const method = h.method === 'auth1' ? 'Auth1' : '密码';
++      return `<tr>
++        <td class="text-sm nowrap">${new Date(h.time).toLocaleString()}</td>
++        <td>${this.esc(h.email)}</td>
++        <td>
++          <span class="badge ${ok ? 'active' : 'error'}">${ok ? '成功' : '失败'}</span>
++          ${!ok ? `<div class="text-xs" style="color:var(--error);margin-top:3px;max-width:240px;overflow:hidden;text-overflow:ellipsis">${this.esc((h.status||'').replace('error: ',''))}</div>` : ''}
++        </td>
++        <td><span class="badge ${h.method === 'auth1' ? 'info' : 'muted'} no-dot">${method}</span></td>
++        <td class="text-sm">${this.esc(h.proxy || '-')}</td>
++        <td><button class="btn btn-ghost btn-xs" onclick="App.removeLoginHistory(${i})">删除</button></td>
++      </tr>`;
++    }).join('') || '<tr class="empty-row"><td colspan="6">暂无登录记录</td></tr>';
++  },
+
+   removeLoginHistory(idx) {
+     this.loginHistory.splice(idx, 1);
+diff --git a/src/dashboard/windsurf-login.js b/src/dashboard/windsurf-login.js
+index 1884266..5175e3b 100644
+--- a/src/dashboard/windsurf-login.js
++++ b/src/dashboard/windsurf-login.js
+@@ -54,7 +54,7 @@ function maskSecret(value, keep = 8) {
+
+ function sanitizeErrorText(text) {
+   return String(text || '')
+-    .replace(/auth1_[A-Za-z0-9_-]+/g, 'auth1_***')
++    .replace(/auth1_[A-Za-z0-9._-]+/g, 'auth1_***')
+     .replace(/devin-session-token\$[A-Za-z0-9._-]+/g, 'devin-session-token$***')
+     .replace(/eyJ[A-Za-z0-9._-]+/g, 'eyJ***')
+     .slice(0, 500);
+@@ -418,6 +418,14 @@ async function windsurfPostAuthWithRetry(auth1Token, orgId, proxy) {
+   throw lastErr;
+ }
+
++function normalizeSessionToken(rawSessionToken) {
++  const sessionToken = String(rawSessionToken || '').trim();
++  if (!sessionToken) throw new Error('WindsurfPostAuth 响应未包含 session_token');
++  return sessionToken.startsWith('devin-session-token$')
++    ? sessionToken
++    : `devin-session-token$${sessionToken}`;
++}
++
+ /**
+  * Full Windsurf login: Devin/Auth1 password login -> Windsurf session token.
+  * @param {string} emailInput
+@@ -438,10 +446,7 @@ export async function windsurfLogin(emailInput, passwordInput, proxy = null, opt
+
+   const login = await passwordLogin(email, password, proxy);
+   const postAuth = await windsurfPostAuthWithRetry(login.auth1Token, opts.orgId || '', proxy);
+-  const rawSessionToken = postAuth.sessionToken;
+-  const apiKey = rawSessionToken.startsWith('devin-session-token$')
+-    ? rawSessionToken
+-    : `devin-session-token$${rawSessionToken}`;
++  const apiKey = normalizeSessionToken(postAuth.sessionToken);
+
+   log.info(`WindsurfPostAuth OK: ${email}, account=${postAuth.accountId || login.accountId || '-'}, token=${maskSecret(apiKey)}`);
+
+@@ -458,6 +463,44 @@ export async function windsurfLogin(emailInput, passwordInput, proxy = null, opt
+   };
+ }
+
++/**
++ * Direct Auth1 post-auth: Auth1 token -> Windsurf session token.
++ * This is used by the local dashboard card importer and never persists the
++ * short-lived Auth1 token.
++ *
++ * @param {string} emailInput
++ * @param {string} auth1TokenInput
++ * @param {object} [proxy] - { host, port, username, password }
++ * @param {object} [opts] - { orgId }
++ * @returns {{ apiKey, sessionToken, name, email, accountId, orgs, apiServerUrl }}
++ */
++export async function windsurfAuth1PostAuth(emailInput, auth1TokenInput, proxy = null, opts = {}) {
++  const email = String(emailInput || '').trim();
++  const auth1Token = String(auth1TokenInput || '').trim();
++  if (!email || !email.includes('@')) throw new Error('email 为必填，且必须是有效邮箱');
++  if (!auth1Token) throw new Error('auth1 token 为必填');
++  if (!auth1Token.startsWith('auth1_')) throw new Error('auth1 token 格式不正确');
++
++  log.info(`Windsurf Auth1 post-auth: ${email} proxy=${proxy?.host || 'global/none'}`);
++
++  const postAuth = await windsurfPostAuthWithRetry(auth1Token, opts.orgId || '', proxy);
++  const apiKey = normalizeSessionToken(postAuth.sessionToken);
++
++  log.info(`Windsurf Auth1 post-auth OK: ${email}, account=${postAuth.accountId || '-'}, token=${maskSecret(apiKey)}`);
++
++  return {
++    apiKey,
++    sessionToken: apiKey,
++    name: email,
++    email,
++    accountId: postAuth.accountId || '',
++    orgs: postAuth.orgs || [],
++    primaryOrgId: postAuth.primaryOrgId || '',
++    requiresOrgSelection: !opts.orgId && (postAuth.orgs || []).length > 1,
++    apiServerUrl: 'https://server.self-serve.windsurf.com',
++  };
++}
++
+ /**
+  * Refresh a Firebase ID token using a stored refresh token.
+  * Existing refresh-token accounts still rely on this compatibility path.

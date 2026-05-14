@@ -97,6 +97,8 @@ If Node.js is not on `PATH`, set `WPA_NODE_DIR` to the directory containing
 - `vendor\WindsurfPoolAPI.commit`: upstream commit used for the inner pool.
 - `vendor\WindsurfPoolAPI.local.patch`: local loopback binding patch.
 - `vendor\WindsurfPoolAPI.ui-overhaul.patch`: optional dashboard UI patch.
+- `vendor\WindsurfPoolAPI.auth1-entry.patch`: optional Auth1 card import patch,
+  layered after the dashboard UI patch.
 
 The real `vendor\WindsurfPoolAPI` checkout, runtime binaries, logs, local
 configuration, credentials, account files, and backup folders are intentionally
@@ -108,6 +110,9 @@ ignored by Git.
   `runtime-config.json`, `logs\`, and `usage-backups\` private.
 - The inner pool stores Windsurf account tokens. Do not commit or share those
   files.
+- The Auth1 card import path exchanges short-lived Auth1 tokens for session
+  tokens in the local dashboard; do not commit pasted cards, logs, or account
+  state.
 - Bind services to `127.0.0.1` unless you have reviewed and hardened the whole
   deployment.
 

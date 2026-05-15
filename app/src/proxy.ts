@@ -29,11 +29,18 @@ function setHeaderFallback(headers: http.OutgoingHttpHeaders, name: string, valu
   if (!exists) headers[name] = value;
 }
 
-function addAnthropicHeaderFallbacks(headers: http.OutgoingHttpHeaders, req: IncomingMessage, traceId: string, path: string) {
+function addAnthropicHeaderFallbacks(
+  headers: http.OutgoingHttpHeaders,
+  req: IncomingMessage,
+  traceId: string,
+  path: string,
+  includeRateLimitFallbacks = true,
+) {
   if (path !== '/v1/messages') return;
   const reset = new Date(Date.now() + 60_000).toISOString();
   setHeaderFallback(headers, 'request-id', `req_${traceId.replace(/-/g, '')}`);
   setHeaderFallback(headers, 'anthropic-version', firstHeader(req.headers['anthropic-version'], '2023-06-01'));
+  if (!includeRateLimitFallbacks) return;
   setHeaderFallback(headers, 'anthropic-ratelimit-requests-limit', '1000');
   setHeaderFallback(headers, 'anthropic-ratelimit-requests-remaining', '999');
   setHeaderFallback(headers, 'anthropic-ratelimit-requests-reset', reset);
@@ -82,7 +89,7 @@ export async function proxyToPool(req: IncomingMessage, res: ServerResponse, cfg
     req.setTimeout(0);
     res.socket?.setNoDelay(true);
     const responseHeaders: http.OutgoingHttpHeaders = { ...poolRes.headers, 'x-windsurfproxyapi-trace-id': traceId };
-    addAnthropicHeaderFallbacks(responseHeaders, req, traceId, path);
+    addAnthropicHeaderFallbacks(responseHeaders, req, traceId, path, poolRes.statusCode !== 429);
     res.writeHead(poolRes.statusCode || 502, responseHeaders);
     poolRes.pipe(res);
     poolRes.on('end', () => {

@@ -1,0 +1,1450 @@
+diff --git a/src/handlers/chat.js b/src/handlers/chat.js
+index f40f64b..89807ce 100644
+--- a/src/handlers/chat.js
++++ b/src/handlers/chat.js
+@@ -8,2 +8,2 @@ import { WindsurfClient } from '../client.js';
+-import { getApiKey, acquireAccountByKey, reportError, reportSuccess, markRateLimited, reportInternalError, updateCapability, getAccountList, isAllRateLimited } from '../auth.js';
+-import { resolveModelWithOptions, getModelInfo } from '../models.js';
++import { getApiKey, acquireAccountByKey, reportError, reportSuccess, markRateLimited, reportInternalError, updateCapability, getAccountList, isAllRateLimited, isAllQuotaExhausted } from '../auth.js';
++import { MODELS, resolveModelWithOptions, getModelInfo } from '../models.js';
+@@ -25 +25 @@ import {
+-import { sanitizeText, PathSanitizeStream } from '../sanitize.js';
++import { sanitizeText, PathSanitizeStream, stripSelfIdentityLeak, IdentityLeakStream } from '../sanitize.js';
+@@ -29,0 +30,50 @@ const QUEUE_MAX_WAIT_MS = 30_000;
++const DEFAULT_RATE_LIMIT_MS = 5 * 60 * 1000;
++const DEFAULT_MAX_ACCOUNT_ATTEMPTS = 50;
++const DEFAULT_FALLBACK_ACCOUNT_ATTEMPTS = 2;
++const DEFAULT_MAX_SAME_PROVIDER_FALLBACKS = 8;
++const DEFAULT_MAX_MODEL_FALLBACKS = 11;
++const ANTHROPIC_MESSAGES_SOURCE = 'POST /v1/messages';
++const CLAUDE_CLIENT_META_RE = /<\s*\/?\s*(?:system-reminder|user_request|command-message|command-name|command-args|local-command-stdout|local-command-stderr|user-prompt-submit-hook)\b|TodoWrite|Exited Plan Mode|\bplan mode\b/i;
++const EXIT_PLAN_MODE_TOOL = 'ExitPlanMode';
++const DISABLED_ENV_VALUES = new Set(['0', 'false', 'off', 'no']);
++const MODEL_FALLBACK_CHAINS = [
++  [
++    'claude-opus-4.7-max',
++    'claude-opus-4.7-xhigh',
++    'claude-opus-4.7-high',
++    'claude-opus-4.7-medium',
++    'claude-opus-4.7-low',
++    'claude-opus-4.6-thinking',
++    'claude-opus-4.6',
++    'claude-sonnet-4.6-thinking',
++    'claude-sonnet-4.6',
++    'claude-4.5-sonnet-thinking',
++    'claude-4.5-sonnet',
++    'claude-4.5-haiku',
++  ],
++  [
++    'gpt-5.4-xhigh',
++    'gpt-5.4-high',
++    'gpt-5.4-medium',
++    'gpt-5.4-low',
++    'gpt-5.4-none',
++    'gpt-5.4-mini-medium',
++    'gpt-5.3-codex',
++    'gpt-5.2-codex-medium',
++    'gpt-5.2',
++    'gpt-5.2-low',
++    'gpt-5.1-codex-medium',
++    'gpt-5.1-medium',
++    'gpt-5-codex',
++  ],
++  [
++    'gemini-3.1-pro-high',
++    'gemini-3.1-pro-low',
++    'gemini-3.0-flash-high',
++    'gemini-3.0-flash',
++    'gemini-3.0-flash-low',
++    'gemini-3.0-flash-minimal',
++    'gemini-2.5-flash',
++  ],
++];
++const CROSS_PROVIDER_FALLBACKS = ['swe-1.6-fast', 'gemini-2.5-flash'];
+@@ -50,3 +100,3 @@ function injectLanguageHint(msgs) {
+-    if (JP_RE.test(text))       hint = '\n\n[IMPORTANT: You MUST respond entirely in Japanese (日本語). Do not switch to English.]';
+-    else if (KR_RE.test(text))  hint = '\n\n[IMPORTANT: You MUST respond entirely in Korean (한국어). Do not switch to English.]';
+-    else if (CJK_RE.test(text)) hint = '\n\n[IMPORTANT: You MUST respond entirely in Chinese (中文). Do not switch to English.]';
++    if (JP_RE.test(text))       hint = '\n\n[Response language: Japanese.]';
++    else if (KR_RE.test(text))  hint = '\n\n[Response language: Korean.]';
++    else if (CJK_RE.test(text)) hint = '\n\n[Response language: Chinese.]';
+@@ -74,0 +125,316 @@ function genId() {
++function isEnvDisabled(value) {
++  return DISABLED_ENV_VALUES.has(String(value || '').trim().toLowerCase());
++}
++
++function parsePositiveInt(value, fallback, min = 1, max = 500) {
++  const n = Number.parseInt(String(value || ''), 10);
++  if (!Number.isFinite(n)) return fallback;
++  return Math.min(max, Math.max(min, n));
++}
++
++function accountCanAttemptModel(account, modelKey) {
++  if (!account || account.status !== 'active') return false;
++  if (account.quotaExhausted) return false;
++  if (!modelKey) return true;
++  if (Array.isArray(account.availableModels)) {
++    return account.availableModels.includes(modelKey);
++  }
++  return true;
++}
++
++function computeAccountAttemptLimit(modelKey, accounts = getAccountList(), env = process.env, options = {}) {
++  const fallbackMode = options?.fallback === true;
++  const cap = parsePositiveInt(
++    fallbackMode ? env.WPA_FALLBACK_ACCOUNT_ATTEMPTS : env.WPA_MAX_ACCOUNT_ATTEMPTS,
++    fallbackMode ? DEFAULT_FALLBACK_ACCOUNT_ATTEMPTS : DEFAULT_MAX_ACCOUNT_ATTEMPTS,
++    1,
++    fallbackMode ? 20 : 500,
++  );
++  const eligible = accounts.filter(a => accountCanAttemptModel(a, modelKey)).length;
++  if (eligible <= 0) return 0;
++  return Math.min(cap, eligible);
++}
++
++function fallbackEnabled(env = process.env) {
++  return !isEnvDisabled(env.WPA_ENABLE_MODEL_FALLBACK);
++}
++
++function crossProviderFallbackEnabled(env = process.env) {
++  return !isEnvDisabled(env.WPA_ALLOW_CROSS_PROVIDER_FALLBACK)
++    && !isEnvDisabled(env.WPA_CROSS_PROVIDER_FALLBACK);
++}
++
++function uniqueModelKeys(keys) {
++  const seen = new Set();
++  const out = [];
++  for (const key of keys) {
++    const resolved = resolveModelWithOptions(key, {});
++    if (!resolved || seen.has(resolved) || !getModelInfo(resolved)) continue;
++    seen.add(resolved);
++    out.push(resolved);
++  }
++  return out;
++}
++
++function sameProviderFallbacks(modelKey) {
++  const info = getModelInfo(modelKey);
++  if (!info) return [];
++  for (const chain of MODEL_FALLBACK_CHAINS) {
++    const idx = chain.indexOf(modelKey);
++    if (idx !== -1) return chain.slice(idx + 1);
++  }
++  return Object.entries(MODELS)
++    .filter(([key, item]) => key !== modelKey && item.provider === info.provider)
++    .sort((a, b) => (a[1].credit || 0) - (b[1].credit || 0))
++    .map(([key]) => key);
++}
++
++function fallbackCandidatesFor(modelKey, env = process.env) {
++  if (!fallbackEnabled(env)) return [];
++  const sameProviderLimit = parsePositiveInt(
++    env.WPA_MAX_SAME_PROVIDER_FALLBACKS,
++    DEFAULT_MAX_SAME_PROVIDER_FALLBACKS,
++    0,
++    50,
++  );
++  const maxFallbacks = parsePositiveInt(env.WPA_MAX_MODEL_FALLBACKS, DEFAULT_MAX_MODEL_FALLBACKS, 1, 50);
++  const sameProvider = sameProviderFallbacks(modelKey).slice(0, sameProviderLimit);
++  const crossProvider = crossProviderFallbackEnabled(env) ? CROSS_PROVIDER_FALLBACKS : [];
++  return uniqueModelKeys([...sameProvider, ...crossProvider]).filter(key => key !== modelKey).slice(0, maxFallbacks);
++}
++
++function retryAfterHeaders(retryAfterMs) {
++  const seconds = Math.max(1, Math.ceil((retryAfterMs || 1000) / 1000));
++  return { 'Retry-After': String(seconds) };
++}
++
++function parseRateLimitDurationMs(message, fallbackMs = DEFAULT_RATE_LIMIT_MS) {
++  const text = String(message || '');
++  const compact = text.match(/resets?\s+in:\s*(?:(\d+)\s*h)?\s*(?:(\d+)\s*m)?\s*(?:(\d+)\s*s)?/i);
++  if (compact) {
++    const hours = Number.parseInt(compact[1] || '0', 10);
++    const minutes = Number.parseInt(compact[2] || '0', 10);
++    const seconds = Number.parseInt(compact[3] || '0', 10);
++    const totalMs = ((hours * 3600) + (minutes * 60) + seconds) * 1000;
++    if (totalMs > 0) return totalMs;
++  }
++  const secondsOnly = text.match(/(?:retry|try again).*?(\d+)\s*seconds?/i);
++  if (secondsOnly) {
++    const seconds = Number.parseInt(secondsOnly[1], 10);
++    if (seconds > 0) return seconds * 1000;
++  }
++  return fallbackMs;
++}
++
++function fallbackHeaders(fromModelKey, toModelKey, reasonType) {
++  return {
++    'x-windsurfproxyapi-fallback-from': fromModelKey,
++    'x-windsurfproxyapi-fallback-to': toModelKey,
++    'x-windsurfproxyapi-fallback-reason': reasonType,
++  };
++}
++
++export const __testing = {
++  computeAccountAttemptLimit,
++  fallbackCandidatesFor,
++  fallbackHeaders,
++  isFallbackRetryableResult,
++  parseRateLimitDurationMs,
++  retryAfterHeaders,
++};
++
++function withExtraHeaders(result, headers) {
++  if (!result) return result;
++  return { ...result, headers: { ...(result.headers || {}), ...headers } };
++}
++
++function getPoolExhaustion(modelKey, displayModel) {
++  const rl = isAllRateLimited(modelKey);
++  if (rl.allLimited) {
++    return {
++      type: 'rate_limit_exceeded',
++      retryAfterMs: rl.retryAfterMs || 60000,
++      message: `${displayModel} 所有账号均已达速率限制，请 ${Math.ceil((rl.retryAfterMs || 60000) / 1000)} 秒后重试`,
++    };
++  }
++  const quota = isAllQuotaExhausted(modelKey);
++  if (quota.allExhausted) {
++    return {
++      type: 'quota_exhausted',
++      resetAt: quota.resetAt,
++      message: `${displayModel} 当前可用账号配额均已耗尽`,
++    };
++  }
++  return null;
++}
++
++function poolExhaustionResponse(exhaustion) {
++  if (exhaustion?.type === 'quota_exhausted') {
++    return {
++      status: 429,
++      body: { error: { message: exhaustion.message, type: 'quota_exhausted', reset_at: exhaustion.resetAt } },
++    };
++  }
++  return {
++    status: 429,
++    headers: retryAfterHeaders(exhaustion?.retryAfterMs || 60000),
++    body: {
++      error: {
++        message: exhaustion?.message || 'All accounts are currently rate limited',
++        type: 'rate_limit_exceeded',
++        retry_after_ms: exhaustion?.retryAfterMs || 60000,
++      },
++    },
++  };
++}
++
++function isFallbackRetryableResult(result) {
++  const type = result?.body?.error?.type;
++  return result?.status === 429
++    || result?.status === 502
++    || result?.status === 503
++    || result?.status === 504
++    || type === 'rate_limit_exceeded'
++    || type === 'quota_exhausted'
++    || type === 'model_not_available'
++    || type === 'model_not_entitled'
++    || type === 'upstream_error'
++    || type === 'ls_unavailable'
++    || type === 'pool_exhausted';
++}
++
++function isFallbackCandidateUsable(modelKey) {
++  if (!modelKey || !getModelInfo(modelKey)) return false;
++  const access = isModelAllowed(modelKey);
++  if (!access.allowed) return false;
++  return getAccountList().some(a => accountCanAttemptModel(a, modelKey));
++}
++
++async function tryFallbackModel(body, deps, fromModelKey, fromDisplayModel, reason) {
++  if (!fallbackEnabled()) return null;
++  const tried = new Set(Array.isArray(body._fallbackTried) ? body._fallbackTried : []);
++  tried.add(fromModelKey);
++
++  for (const candidate of fallbackCandidatesFor(fromModelKey)) {
++    const candidateKey = resolveModelWithOptions(candidate, {});
++    if (!candidateKey || tried.has(candidateKey) || !isFallbackCandidateUsable(candidateKey)) continue;
++    const candidateInfo = getModelInfo(candidateKey);
++    const candidateDisplay = candidateInfo?.name || candidateKey;
++    if (getPoolExhaustion(candidateKey, candidateDisplay)) {
++      tried.add(candidateKey);
++      continue;
++    }
++
++    log.warn(`Chat: fallback ${fromDisplayModel} -> ${candidateDisplay} reason=${reason?.type || 'pool_exhausted'}`);
++    const result = await handleChatCompletions({
++      ...body,
++      model: candidateKey,
++      _forceModelKey: candidateKey,
++      _fallbackFrom: body._fallbackFrom || fromModelKey,
++      _fallbackTried: Array.from(tried),
++      _fallbackOriginalModel: body._fallbackOriginalModel || body.model,
++    }, deps);
++
++    if (result?.status === 200 || result?.stream) {
++      return withExtraHeaders(result, fallbackHeaders(fromModelKey, candidateKey, reason?.type || 'pool_exhausted'));
++    }
++    tried.add(candidateKey);
++    if (!isFallbackRetryableResult(result)) {
++      return withExtraHeaders(result, fallbackHeaders(fromModelKey, candidateKey, reason?.type || 'pool_exhausted'));
++    }
++  }
++  return null;
++}
++
++function countToolCallsNamed(toolCalls, name) {
++  if (!Array.isArray(toolCalls)) return 0;
++  return toolCalls.filter(tc => (tc?.name || tc?.function?.name) === name).length;
++}
++
++function logExitPlanModeToolCalls(toolCalls, callSource, flow) {
++  const count = countToolCallsNamed(toolCalls, EXIT_PLAN_MODE_TOOL);
++  if (count > 0) {
++    log.info(`Chat: ${EXIT_PLAN_MODE_TOOL} tool_call source=${callSource} flow=${flow} count=${count}`);
++  }
++}
++
++function getToolName(t) {
++  return t?.function?.name || t?.name || '';
++}
++
++function hasToolNamed(tools, name) {
++  return Array.isArray(tools) && tools.some(t => getToolName(t) === name);
++}
++
++function filterToolsByName(tools, name) {
++  return Array.isArray(tools) ? tools.filter(t => getToolName(t) === name) : [];
++}
++
++function isAllowedToolCall(tc, allowedToolNames) {
++  if (!tc?.name) return false;
++  return !allowedToolNames || allowedToolNames.has(tc.name);
++}
++
++function filterToolCallsForCaller(toolCalls, allowedToolNames) {
++  if (!Array.isArray(toolCalls)) return [];
++  return toolCalls.filter(tc => isAllowedToolCall(tc, allowedToolNames));
++}
++
++function hasExitPlanModeToolCall(toolCalls) {
++  return Array.isArray(toolCalls) && toolCalls.some(tc => tc?.name === EXIT_PLAN_MODE_TOOL);
++}
++
++function parseToolArgumentsJson(raw) {
++  if (!raw || typeof raw !== 'string') return {};
++  try {
++    const parsed = JSON.parse(raw);
++    return parsed && typeof parsed === 'object' && !Array.isArray(parsed) ? parsed : {};
++  } catch {
++    return {};
++  }
++}
++
++function withExitPlanModePlanFallback(tc, fallbackPlanText) {
++  if (tc?.name !== EXIT_PLAN_MODE_TOOL) return tc;
++  const args = parseToolArgumentsJson(tc.argumentsJson || tc.arguments || '{}');
++  if (typeof args.plan !== 'string' || !args.plan.trim()) {
++    args.plan = String(fallbackPlanText || '').trim();
++  }
++  if (!args.plan.trim()) args.plan = 'Plan is ready for approval.';
++  return {
++    ...tc,
++    argumentsJson: JSON.stringify({ ...args, plan: args.plan }),
++  };
++}
++
++function createExitPlanModeToolCall(planText) {
++  return withExitPlanModePlanFallback({
++    id: `call_plan_${Date.now().toString(36)}`,
++    name: EXIT_PLAN_MODE_TOOL,
++    argumentsJson: '{}',
++  }, planText);
++}
++
++function contentToPlainText(content) {
++  if (typeof content === 'string') return content;
++  if (Array.isArray(content)) {
++    return content.map(p => (typeof p?.text === 'string' ? p.text : JSON.stringify(p))).join('');
++  }
++  return content == null ? '' : JSON.stringify(content);
++}
++
++function hasClaudeClientMeta(messages) {
++  if (!Array.isArray(messages)) return false;
++  return messages.some(m => CLAUDE_CLIENT_META_RE.test(contentToPlainText(m?.content)));
++}
++
++function shouldBlockCascadeReuse(body, source, messages) {
++  // Claude Code's Anthropic endpoint carries client-side state such as
++  // system-reminder, plan/todo status, and tool wrappers. Cascade reuse sends
++  // only the newest user turn, so keep these requests on fresh full-history
++  // cascades until the metadata is part of a safe fingerprint.
++  return body?._fromAnthropicMessages === true
++    || source === ANTHROPIC_MESSAGES_SOURCE
++    || hasClaudeClientMeta(messages);
++}
++
+@@ -169 +535,4 @@ export async function handleChatCompletions(body, deps = {}) {
+-  const modelKey = resolveModelWithOptions(reqModel || config.defaultModel, body);
++  const forcedModelKey = typeof body._forceModelKey === 'string' && getModelInfo(body._forceModelKey)
++    ? body._forceModelKey
++    : null;
++  const modelKey = forcedModelKey || resolveModelWithOptions(reqModel || config.defaultModel, body);
+@@ -182,0 +552 @@ export async function handleChatCompletions(body, deps = {}) {
++  const cascadeReuseBlocked = shouldBlockCascadeReuse(body, source, messages);
+@@ -193 +563,6 @@ export async function handleChatCompletions(body, deps = {}) {
+-  const hasTools = Array.isArray(tools) && tools.length > 0;
++  const planModeFinalGate = body?._planModeFinalIntent === true && hasToolNamed(tools, EXIT_PLAN_MODE_TOOL);
++  const effectiveTools = planModeFinalGate ? filterToolsByName(tools, EXIT_PLAN_MODE_TOOL) : (tools || []);
++  const effectiveToolChoice = planModeFinalGate
++    ? { type: 'function', function: { name: EXIT_PLAN_MODE_TOOL } }
++    : tool_choice;
++  const hasTools = Array.isArray(effectiveTools) && effectiveTools.length > 0;
+@@ -200 +575,14 @@ export async function handleChatCompletions(body, deps = {}) {
+-  const toolPreamble = emulateTools ? buildToolPreambleForProto(tools || [], tool_choice) : '';
++  const toolPreamble = emulateTools ? buildToolPreambleForProto(effectiveTools, effectiveToolChoice) : '';
++  // Whitelist of client-declared tool names. Used downstream to decide which
++  // Cascade native tool_call_proposals are safe to surface to the caller
++  // (vs. server-internal Cascade tools like edit_file/view_file which must
++  // stay hidden because their argumentsJson/result fields contain server
++  // paths). When emulateTools is false we don't surface any native tool
++  // calls at all.
++  const allowedToolNames = emulateTools
++    ? new Set(effectiveTools.map(t => getToolName(t)).filter(Boolean))
++    : null;
++  const exitPlanModeAvailable = allowedToolNames?.has(EXIT_PLAN_MODE_TOOL) || false;
++  if (emulateTools) {
++    log.info(`Chat: tools=emu declared=${allowedToolNames?.size || 0} exitPlanMode=${exitPlanModeAvailable ? 1 : 0} planFinal=${planModeFinalGate ? 1 : 0} stream=${stream ? 1 : 0} source=${source}`);
++  }
+@@ -252 +640,7 @@ export async function handleChatCompletions(body, deps = {}) {
+-    return streamResponse(chatId, created, displayModel, modelKey, messages, cascadeMessages, modelEnum, modelUid, useCascade, ckey, emulateTools, toolPreamble, source, creditMultiplier, callerKey);
++    const streamPreflightExhaustion = getPoolExhaustion(modelKey, displayModel);
++    if (streamPreflightExhaustion) {
++      const fallback = await tryFallbackModel(body, deps, modelKey, displayModel, streamPreflightExhaustion);
++      if (fallback) return fallback;
++      return poolExhaustionResponse(streamPreflightExhaustion);
++    }
++    return streamResponse(chatId, created, displayModel, modelKey, messages, cascadeMessages, modelEnum, modelUid, useCascade, ckey, emulateTools, toolPreamble, source, creditMultiplier, callerKey, !cascadeReuseBlocked, body?._fromAnthropicMessages === true, allowedToolNames, planModeFinalGate, { body, deps });
+@@ -284 +678 @@ export async function handleChatCompletions(body, deps = {}) {
+-  const reuseEnabled = useCascade && !emulateTools && isExperimentalEnabled('cascadeConversationReuse');
++  const reuseEnabled = useCascade && !emulateTools && !cascadeReuseBlocked && isExperimentalEnabled('cascadeConversationReuse');
+@@ -292,3 +686,11 @@ export async function handleChatCompletions(body, deps = {}) {
+-  // Dynamic: try every active account (capped at 10) so a large pool with
+-  // many rate-limited accounts can still fall through to a healthy one.
+-  const maxAttempts = Math.min(10, Math.max(3, getAccountList().filter(a => a.status === 'active').length));
++  const preflightExhaustion = getPoolExhaustion(modelKey, displayModel);
++  if (preflightExhaustion) {
++    const fallback = await tryFallbackModel(body, deps, modelKey, displayModel, preflightExhaustion);
++    if (fallback) return fallback;
++    return poolExhaustionResponse(preflightExhaustion);
++  }
++
++  // Try every account eligible for this model (bounded by WPA_MAX_ACCOUNT_ATTEMPTS).
++  // The previous hard cap of 10 could return 429 while a larger pool still had
++  // untried healthy accounts.
++  const maxAttempts = computeAccountAttemptLimit(modelKey, getAccountList(), process.env, { fallback: !!body._fallbackFrom });
+@@ -319 +721 @@ export async function handleChatCompletions(body, deps = {}) {
+-          markRateLimited(acct.id, modelKey);
++          markRateLimited(acct.apiKey, DEFAULT_RATE_LIMIT_MS, modelKey);
+@@ -328 +730,7 @@ export async function handleChatCompletions(body, deps = {}) {
+-    await ensureLs(acct.proxy);
++    try {
++      await ensureLs(acct.proxy);
++    } catch (e) {
++      lastErr = { status: 503, body: { error: { message: e.message, type: 'ls_unavailable' } } };
++      log.warn(`Account ${acct.email} has no available LS (${e.message}), trying next account`);
++      continue;
++    }
+@@ -330 +738,4 @@ export async function handleChatCompletions(body, deps = {}) {
+-    if (!ls) { lastErr = { status: 503, body: { error: { message: 'No LS instance available', type: 'ls_unavailable' } } }; break; }
++    if (!ls) {
++      lastErr = { status: 503, body: { error: { message: 'No LS instance available', type: 'ls_unavailable' } } };
++      continue;
++    }
+@@ -344,0 +756 @@ export async function handleChatCompletions(body, deps = {}) {
++      { isFromAnthropicMessages: body?._fromAnthropicMessages === true, allowedToolNames, planModeFinalGate },
+@@ -364,3 +776,5 @@ export async function handleChatCompletions(body, deps = {}) {
+-    const rl = isAllRateLimited(modelKey);
+-    if (rl.allLimited) {
+-      return { status: 429, body: { error: { message: `${displayModel} 所有账号均已达速率限制，请 ${Math.ceil(rl.retryAfterMs / 1000)} 秒后重试`, type: 'rate_limit_exceeded', retry_after_ms: rl.retryAfterMs } } };
++    const exhaustion = getPoolExhaustion(modelKey, displayModel);
++    if (exhaustion) {
++      const fallback = await tryFallbackModel(body, deps, modelKey, displayModel, exhaustion);
++      if (fallback) return fallback;
++      return poolExhaustionResponse(exhaustion);
+@@ -372 +786,2 @@ export async function handleChatCompletions(body, deps = {}) {
+-async function nonStreamResponse(client, id, created, model, modelKey, messages, cascadeMessages, modelEnum, modelUid, useCascade, apiKey, ckey, poolCtx, emulateTools, toolPreamble, source = 'POST /v1/chat/completions', creditMultiplier = 0) {
++async function nonStreamResponse(client, id, created, model, modelKey, messages, cascadeMessages, modelEnum, modelUid, useCascade, apiKey, ckey, poolCtx, emulateTools, toolPreamble, source = 'POST /v1/chat/completions', creditMultiplier = 0, extra = {}) {
++  const { isFromAnthropicMessages = false, allowedToolNames = null, planModeFinalGate = false } = extra;
+@@ -385 +800,6 @@ async function nonStreamResponse(client, id, created, model, modelKey, messages,
+-      const chunks = await client.cascadeChat(cascadeMessages, modelEnum, modelUid, { reuseEntry: poolCtx?.reuseEntry || null, toolPreamble });
++      const chunks = await client.cascadeChat(cascadeMessages, modelEnum, modelUid, {
++        reuseEntry: poolCtx?.reuseEntry || null,
++        toolPreamble,
++        requestedModel: model,
++        isFromAnthropicMessages,
++      });
+@@ -400 +820,27 @@ async function nonStreamResponse(client, id, created, model, modelKey, messages,
+-        if (emulateTools) toolCalls = parsed.toolCalls;
++        if (emulateTools) {
++          toolCalls = filterToolCallsForCaller(parsed.toolCalls, allowedToolNames);
++          logExitPlanModeToolCalls(toolCalls, 'text', 'non-stream');
++        }
++      }
++      // Cascade native tool calls (chunks.toolCalls) split into two buckets:
++      //   - Internal Cascade tools (edit_file, view_file, list_directory,
++      //     run_command, ...) STAY DROPPED. Their argumentsJson and result
++      //     fields reference server-internal paths like
++      //     /tmp/windsurf-workspace/config.yaml and must never be exposed.
++      //   - Client-declared tools (ExitPlanMode, AskUserQuestion, WebFetch,
++      //     Bash, ...) — surfaced via the allowedToolNames whitelist with
++      //     argumentsJson sanitised. Without this, plan-mode UIs (Claude
++      //     Code) hang forever waiting for an ExitPlanMode tool_use that
++      //     the model emitted via Cascade's native channel.
++      if (emulateTools && allowedToolNames && Array.isArray(chunks.toolCalls)) {
++        const beforeNativeToolCalls = toolCalls.length;
++        for (const tc of chunks.toolCalls) {
++          if (!tc?.name || !allowedToolNames.has(tc.name)) continue;
++          if (toolCalls.some(t => t.id && t.id === tc.id)) continue;
++          toolCalls.push({
++            id: tc.id || `call_${toolCalls.length}_${Date.now().toString(36)}`,
++            name: tc.name,
++            argumentsJson: sanitizeText(tc.argumentsJson || '{}'),
++          });
++        }
++        logExitPlanModeToolCalls(toolCalls.slice(beforeNativeToolCalls), 'native', 'non-stream');
+@@ -402,6 +847,0 @@ async function nonStreamResponse(client, id, created, model, modelKey, messages,
+-      // Built-in Cascade tool calls (chunks.toolCalls — edit_file, view_file,
+-      // list_directory, run_command, etc.) are intentionally DROPPED. Their
+-      // argumentsJson and result fields reference server-internal paths like
+-      // /tmp/windsurf-workspace/config.yaml and must never be exposed to an
+-      // API caller. Emulated tool calls (above) are safe because they
+-      // reference the caller's own tool schema.
+@@ -417,0 +858 @@ async function nonStreamResponse(client, id, created, model, modelKey, messages,
++    allText = stripSelfIdentityLeak(allText, model);
+@@ -418,0 +860 @@ async function nonStreamResponse(client, id, created, model, modelKey, messages,
++    allThinking = stripSelfIdentityLeak(allThinking, '');
+@@ -424,0 +867,7 @@ async function nonStreamResponse(client, id, created, model, modelKey, messages,
++    if (planModeFinalGate) {
++      toolCalls = filterToolCallsForCaller(toolCalls, new Set([EXIT_PLAN_MODE_TOOL]))
++        .map(tc => withExitPlanModePlanFallback(tc, allText));
++      if (!hasExitPlanModeToolCall(toolCalls)) {
++        toolCalls = [createExitPlanModeToolCall(allText)];
++      }
++    }
+@@ -503 +952 @@ async function nonStreamResponse(client, id, created, model, modelKey, messages,
+-    if (isRateLimit) { markRateLimited(apiKey, 5 * 60 * 1000, modelKey); err.isRateLimit = true; err.isModelError = true; }
++    if (isRateLimit) { markRateLimited(apiKey, parseRateLimitDurationMs(err.message), modelKey); err.isRateLimit = true; err.isModelError = true; }
+@@ -517,0 +967 @@ async function nonStreamResponse(client, id, created, model, modelKey, messages,
++        headers: retryAfterHeaders(rl.retryAfterMs || 60000),
+@@ -528 +978 @@ async function nonStreamResponse(client, id, created, model, modelKey, messages,
+-function streamResponse(id, created, model, modelKey, messages, cascadeMessages, modelEnum, modelUid, useCascade, ckey, emulateTools, toolPreamble, source = 'POST /v1/chat/completions', creditMultiplier = 0, callerKey = '') {
++function streamResponse(id, created, model, modelKey, messages, cascadeMessages, modelEnum, modelUid, useCascade, ckey, emulateTools, toolPreamble, source = 'POST /v1/chat/completions', creditMultiplier = 0, callerKey = '', allowCascadeReuse = true, isFromAnthropicMessages = false, allowedToolNames = null, planModeFinalGate = false, fallbackContext = null) {
+@@ -565 +1015 @@ function streamResponse(id, created, model, modelKey, messages, cascadeMessages,
+-      const cached = cacheGet(ckey);
++      const cached = planModeFinalGate ? null : cacheGet(ckey);
+@@ -599 +1049 @@ function streamResponse(id, created, model, modelKey, messages, cascadeMessages,
+-      const maxAttempts = Math.min(10, Math.max(3, getAccountList().filter(a => a.status === 'active').length));
++      const maxAttempts = computeAccountAttemptLimit(modelKey, getAccountList(), process.env, { fallback: !!fallbackContext?.body?._fallbackFrom });
+@@ -608 +1058 @@ function streamResponse(id, created, model, modelKey, messages, cascadeMessages,
+-      const reuseEnabled = useCascade && !emulateTools && isExperimentalEnabled('cascadeConversationReuse');
++      const reuseEnabled = useCascade && !emulateTools && allowCascadeReuse && isExperimentalEnabled('cascadeConversationReuse');
+@@ -620,4 +1070,14 @@ function streamResponse(id, created, model, modelKey, messages, cascadeMessages,
+-      // Streaming path sanitizers. Every text/thinking delta flows through a
+-      // PathSanitizeStream before leaving the server so /tmp/windsurf-workspace,
+-      // /opt/windsurf and /root/WindsurfPoolAPI literals can never slip out even
+-      // if a path straddles a chunk boundary. See src/sanitize.js.
++      // Streaming path sanitizers. Every text/thinking delta flows through:
++      //   1. IdentityLeakStream  — paragraph-level drops of "我是 Cascade" /
++      //                            "I am Cascade" / Cascade-vs-Claude denials.
++      //                            Required because the model occasionally
++      //                            self-identifies mid-conversation outside the
++      //                            isModelIdentityProbe path (e.g. user says
++      //                            "假的吧" → model confesses).
++      //   2. PathSanitizeStream  — character-level scrub of
++      //                            /tmp/windsurf-workspace, /opt/windsurf and
++      //                            /root/WindsurfPoolAPI even if a path
++      //                            straddles a chunk boundary.
++      // See src/sanitize.js for the regexes and rationale.
++      const identityStreamText = new IdentityLeakStream(model);
++      const identityStreamThinking = new IdentityLeakStream('');
+@@ -629,0 +1090 @@ function streamResponse(id, created, model, modelKey, messages, cascadeMessages,
++        if (planModeFinalGate) return;
+@@ -635,0 +1097 @@ function streamResponse(id, created, model, modelKey, messages, cascadeMessages,
++        if (planModeFinalGate) return;
+@@ -651,0 +1114,21 @@ function streamResponse(id, created, model, modelKey, messages, cascadeMessages,
++      const recordToolCall = (tc, callSource) => {
++        if (!isAllowedToolCall(tc, allowedToolNames)) return;
++        const stored = tc;
++        const idx = collectedToolCalls.length;
++        collectedToolCalls.push(stored);
++        logExitPlanModeToolCalls([stored], callSource, 'stream');
++        if (!planModeFinalGate) emitToolCallDelta(stored, idx);
++      };
++
++      const emitPlanModeFinalToolCall = () => {
++        if (!planModeFinalGate) return;
++        const existing = collectedToolCalls.find(tc => tc?.name === EXIT_PLAN_MODE_TOOL);
++        const finalCall = existing
++          ? withExitPlanModePlanFallback(existing, accText)
++          : createExitPlanModeToolCall(accText);
++        collectedToolCalls.length = 0;
++        collectedToolCalls.push(finalCall);
++        logExitPlanModeToolCalls([finalCall], existing ? 'gate' : 'gate_synth', 'stream');
++        emitToolCallDelta(finalCall, 0);
++      };
++
+@@ -674,3 +1157 @@ function streamResponse(id, created, model, modelKey, messages, cascadeMessages,
+-                const idx = collectedToolCalls.length;
+-                collectedToolCalls.push(tc);
+-                emitToolCallDelta(tc, idx);
++                recordToolCall(tc, 'text');
+@@ -680 +1161,20 @@ function streamResponse(id, created, model, modelKey, messages, cascadeMessages,
+-          if (safeText) emitContent(pathStreamText.feed(safeText));
++          if (safeText) {
++            const idSafe = identityStreamText.feed(safeText);
++            if (idSafe) emitContent(pathStreamText.feed(idSafe));
++          }
++        }
++        // Cascade native tool calls (proto trajectory step.toolCalls).
++        // Surface them as OpenAI tool_call deltas only when (a) the caller
++        // is using emulation and (b) the tool name is on the caller's own
++        // schema whitelist. Internal Cascade tools (edit_file, view_file,
++        // list_directory, run_command, ...) stay hidden — their args/result
++        // contain server-internal paths.
++        if (Array.isArray(chunk.toolCalls) && emulateTools && allowedToolNames) {
++          for (const tc of chunk.toolCalls) {
++            if (!tc?.name || !allowedToolNames.has(tc.name)) continue;
++            recordToolCall({
++              id: tc.id || `call_${collectedToolCalls.length}_${Date.now().toString(36)}`,
++              name: tc.name,
++              argumentsJson: sanitizeText(tc.argumentsJson || '{}'),
++            }, 'native');
++          }
+@@ -683 +1183,2 @@ function streamResponse(id, created, model, modelKey, messages, cascadeMessages,
+-          emitThinking(pathStreamThinking.feed(chunk.thinking));
++          const idSafeThinking = identityStreamThinking.feed(chunk.thinking);
++          if (idSafeThinking) emitThinking(pathStreamThinking.feed(idSafeThinking));
+@@ -712 +1213 @@ function streamResponse(id, created, model, modelKey, messages, cascadeMessages,
+-                markRateLimited(acct.id, modelKey);
++                markRateLimited(acct.apiKey, DEFAULT_RATE_LIMIT_MS, modelKey);
+@@ -720 +1221,7 @@ function streamResponse(id, created, model, modelKey, messages, cascadeMessages,
+-          try { await ensureLs(acct.proxy); } catch (e) { lastErr = e; break; }
++          try {
++            await ensureLs(acct.proxy);
++          } catch (e) {
++            lastErr = e;
++            log.warn(`Account ${acct.email} has no available LS (${e.message}), trying next account`);
++            continue;
++          }
+@@ -722 +1229 @@ function streamResponse(id, created, model, modelKey, messages, cascadeMessages,
+-          if (!ls) { lastErr = new Error('No LS instance available'); break; }
++          if (!ls) { lastErr = new Error('No LS instance available'); continue; }
+@@ -733 +1240,2 @@ function streamResponse(id, created, model, modelKey, messages, cascadeMessages,
+-                onChunk, signal: abortController.signal, reuseEntry, toolPreamble,
++                onChunk, signal: abortController.signal, reuseEntry, toolPreamble, requestedModel: model,
++                isFromAnthropicMessages,
+@@ -747 +1255,4 @@ function streamResponse(id, created, model, modelKey, messages, cascadeMessages,
+-              if (tail.text) emitContent(pathStreamText.feed(tail.text));
++              if (tail.text) {
++                const idSafe = identityStreamText.feed(tail.text);
++                if (idSafe) emitContent(pathStreamText.feed(idSafe));
++              }
+@@ -750,3 +1261 @@ function streamResponse(id, created, model, modelKey, messages, cascadeMessages,
+-                  const idx = collectedToolCalls.length;
+-                  collectedToolCalls.push(tc);
+-                  emitToolCallDelta(tc, idx);
++                  recordToolCall(tc, 'text');
+@@ -755,0 +1265,6 @@ function streamResponse(id, created, model, modelKey, messages, cascadeMessages,
++            // Flush order: IdentityLeakStream → PathSanitizeStream so the
++            // identity stream's final residue (or fallback model name when
++            // every paragraph was suppressed) still gets path-scrubbed before
++            // leaving the server.
++            const idTextTail = identityStreamText.flush();
++            if (idTextTail) emitContent(pathStreamText.feed(idTextTail));
+@@ -756,0 +1272,2 @@ function streamResponse(id, created, model, modelKey, messages, cascadeMessages,
++            const idThinkingTail = identityStreamThinking.flush();
++            if (idThinkingTail) emitThinking(pathStreamThinking.feed(idThinkingTail));
+@@ -791,0 +1309 @@ function streamResponse(id, created, model, modelKey, messages, cascadeMessages,
++            emitPlanModeFinalToolCall();
+@@ -816 +1334 @@ function streamResponse(id, created, model, modelKey, messages, cascadeMessages,
+-            if (isRateLimit) { markRateLimited(currentApiKey, 5 * 60 * 1000, modelKey); err.isRateLimit = true; err.isModelError = true; }
++            if (isRateLimit) { markRateLimited(currentApiKey, parseRateLimitDurationMs(err.message), modelKey); err.isRateLimit = true; err.isModelError = true; }
+@@ -836,0 +1355,11 @@ function streamResponse(id, created, model, modelKey, messages, cascadeMessages,
++        if (!hadSuccess && fallbackContext) {
++          const exhaustion = getPoolExhaustion(modelKey, model);
++          if (exhaustion) {
++            const fallback = await tryFallbackModel(fallbackContext.body, fallbackContext.deps, modelKey, model, exhaustion);
++            if (fallback?.stream && typeof fallback.handler === 'function') {
++              stopHeartbeat();
++              await fallback.handler(res);
++              return;
++            }
++          }
++        }
+@@ -843,4 +1372,2 @@ function streamResponse(id, created, model, modelKey, messages, cascadeMessages,
+-          const rl = isAllRateLimited(modelKey);
+-          const errMsg = rl.allLimited
+-            ? `${model} 所有账号均已达速率限制，请 ${Math.ceil(rl.retryAfterMs / 1000)} 秒后重试`
+-            : sanitizeText(lastErr?.message || 'no accounts');
++          const exhaustion = getPoolExhaustion(modelKey, model);
++          const errMsg = exhaustion ? exhaustion.message : sanitizeText(lastErr?.message || 'no accounts');
+diff --git a/src/handlers/messages.js b/src/handlers/messages.js
+index 31496bc..c1e7108 100644
+--- a/src/handlers/messages.js
++++ b/src/handlers/messages.js
+@@ -18 +18 @@
+-import { randomUUID } from 'crypto';
++import { randomBytes } from 'crypto';
+@@ -34,0 +35,6 @@ const VALID_EFFORTS = new Set(['low', 'medium', 'high', 'xhigh', 'max']);
++const EXPOSE_THINKING = process.env.WPA_EXPOSE_THINKING === '1';
++const BASE58 = '123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz';
++const CHARS_PER_INPUT_TOKEN = 4;
++const CHARS_PER_OUTPUT_TOKEN = 4;
++const DEFAULT_IMAGE_TOKENS = 1568;
++const MAX_IMAGE_TOKENS = 4784;
+@@ -78,2 +84,6 @@ function mapModel(name, effort) {
+-  // Claude Opus 4.7 family — redirected to opus 4.6 thinking per user config.
+-  if (/claude.*opus.*4[-_.]7/i.test(bareName))         return 'claude-opus-4.6-thinking';
++  // Exact dot-form Opus 4.7 variants should survive the Anthropic adapter.
++  const exactOpus47 = bareName.match(/^claude-opus-4\.7-(low|medium|high|xhigh|max)$/i);
++  if (exactOpus47) return `claude-opus-4.7-${exactOpus47[1].toLowerCase()}`;
++
++  // This local install defaults the Opus 4.7 family alias to Max.
++  if (/claude.*opus.*4[-_.]7/i.test(bareName))         return 'claude-opus-4.7-max';
+@@ -109,0 +120,8 @@ function mapModel(name, effort) {
++function randomBase58(length) {
++  const bytes = randomBytes(length);
++  let out = '';
++  for (const byte of bytes) out += BASE58[byte % BASE58.length];
++  while (out.length < length) out += BASE58[randomBytes(1)[0] % BASE58.length];
++  return out;
++}
++
+@@ -111 +129 @@ function genMsgId() {
+-  return 'msg_' + randomUUID().replace(/-/g, '').slice(0, 24);
++  return 'msg_01' + randomBase58(24);
+@@ -115 +133,170 @@ function genToolUseId() {
+-  return 'toolu_' + randomUUID().replace(/-/g, '').slice(0, 22);
++  return 'toolu_01' + randomBase58(22);
++}
++
++function estimateTextTokens(chars, charsPerToken = CHARS_PER_INPUT_TOKEN) {
++  const n = Math.max(0, Number(chars) || 0);
++  return n > 0 ? Math.max(1, Math.ceil(n / charsPerToken)) : 0;
++}
++
++function safeJsonLength(value) {
++  try { return JSON.stringify(value ?? {}).length; } catch { return 0; }
++}
++
++function validDimensions(width, height) {
++  return Number.isFinite(width) && Number.isFinite(height) && width > 0 && height > 0;
++}
++
++function dimensionsFromImageBytes(buf) {
++  if (!Buffer.isBuffer(buf) || buf.length < 10) return null;
++
++  // PNG: IHDR stores width/height as big-endian uint32 at byte 16/20.
++  if (buf.length >= 24 && buf[0] === 0x89 && buf.toString('ascii', 1, 4) === 'PNG') {
++    const width = buf.readUInt32BE(16);
++    const height = buf.readUInt32BE(20);
++    return validDimensions(width, height) ? { width, height } : null;
++  }
++
++  // GIF: logical screen width/height at byte 6/8.
++  if (buf.length >= 10 && buf.toString('ascii', 0, 3) === 'GIF') {
++    const width = buf.readUInt16LE(6);
++    const height = buf.readUInt16LE(8);
++    return validDimensions(width, height) ? { width, height } : null;
++  }
++
++  // JPEG: scan for a SOF marker that carries dimensions.
++  if (buf.length >= 4 && buf[0] === 0xff && buf[1] === 0xd8) {
++    let offset = 2;
++    while (offset + 9 < buf.length) {
++      if (buf[offset] !== 0xff) { offset++; continue; }
++      const marker = buf[offset + 1];
++      const size = buf.readUInt16BE(offset + 2);
++      if (size < 2) return null;
++      if ((marker >= 0xc0 && marker <= 0xc3) || (marker >= 0xc5 && marker <= 0xc7) ||
++          (marker >= 0xc9 && marker <= 0xcb) || (marker >= 0xcd && marker <= 0xcf)) {
++        const height = buf.readUInt16BE(offset + 5);
++        const width = buf.readUInt16BE(offset + 7);
++        return validDimensions(width, height) ? { width, height } : null;
++      }
++      offset += 2 + size;
++    }
++  }
++
++  // WebP VP8X: canvas width/height minus one as 24-bit little-endian values.
++  if (buf.length >= 30 && buf.toString('ascii', 0, 4) === 'RIFF' && buf.toString('ascii', 8, 12) === 'WEBP' && buf.toString('ascii', 12, 16) === 'VP8X') {
++    const width = 1 + buf.readUIntLE(24, 3);
++    const height = 1 + buf.readUIntLE(27, 3);
++    return validDimensions(width, height) ? { width, height } : null;
++  }
++
++  return null;
++}
++
++function dimensionsFromBase64(data) {
++  if (typeof data !== 'string' || !data) return null;
++  try {
++    return dimensionsFromImageBytes(Buffer.from(data.slice(0, 1024 * 1024), 'base64'));
++  } catch {
++    return null;
++  }
++}
++
++function estimateImageTokensFromDimensions(dimensions) {
++  if (!dimensions || !validDimensions(dimensions.width, dimensions.height)) return DEFAULT_IMAGE_TOKENS;
++  return Math.max(1, Math.min(MAX_IMAGE_TOKENS, Math.ceil((dimensions.width * dimensions.height) / 750)));
++}
++
++function estimateImageBlockTokens(block) {
++  if (block?.source?.type === 'base64') {
++    return estimateImageTokensFromDimensions(dimensionsFromBase64(block.source.data));
++  }
++  return DEFAULT_IMAGE_TOKENS;
++}
++
++function addContentEstimate(content, acc) {
++  if (typeof content === 'string') {
++    acc.textChars += content.length;
++    return;
++  }
++  if (!Array.isArray(content)) {
++    acc.textChars += String(content ?? '').length;
++    return;
++  }
++  for (const block of content) {
++    if (!block || typeof block !== 'object') continue;
++    if (block.cache_control) acc.cacheControlBlocks++;
++    if (typeof block.text === 'string') acc.textChars += block.text.length;
++    else if (typeof block.content === 'string') acc.textChars += block.content.length;
++    if (block.type === 'tool_use') {
++      acc.textChars += String(block.name || '').length + safeJsonLength(block.input);
++    } else if (block.type === 'tool_result') {
++      addContentEstimate(block.content, acc);
++    } else if (block.type === 'image') {
++      acc.imageCount++;
++      acc.imageTokens += estimateImageBlockTokens(block);
++    }
++  }
++}
++
++function inspectPromptCacheIntent(anthropicBody) {
++  let blocks = 0;
++  const visit = (value) => {
++    if (!value || typeof value !== 'object') return;
++    if (value.cache_control) blocks++;
++    if (Array.isArray(value)) {
++      for (const item of value) visit(item);
++      return;
++    }
++    for (const [key, child] of Object.entries(value)) {
++      if (key === 'data') continue;
++      visit(child);
++    }
++  };
++  visit(anthropicBody?.system);
++  visit(anthropicBody?.messages);
++  visit(anthropicBody?.tools);
++  return { hasCacheControl: blocks > 0, blocks };
++}
++
++function estimateAnthropicInputUsage(anthropicBody) {
++  const acc = { textChars: 0, imageTokens: 0, imageCount: 0, cacheControlBlocks: 0 };
++  const system = anthropicBody?.system;
++  if (typeof system === 'string') {
++    acc.textChars += system.length;
++  } else if (Array.isArray(system)) {
++    addContentEstimate(system, acc);
++  }
++  for (const message of anthropicBody?.messages || []) addContentEstimate(message?.content, acc);
++  for (const tool of anthropicBody?.tools || []) {
++    acc.textChars += String(tool?.name || '').length;
++    acc.textChars += String(tool?.description || '').length;
++    acc.textChars += safeJsonLength(tool?.input_schema);
++  }
++  const promptCache = inspectPromptCacheIntent(anthropicBody);
++  const textTokens = estimateTextTokens(acc.textChars);
++  const inputTokens = Math.max(1, textTokens + acc.imageTokens);
++  return {
++    inputTokens,
++    textTokens,
++    imageTokens: acc.imageTokens,
++    imageCount: acc.imageCount,
++    cacheControlBlocks: promptCache.blocks,
++    hasCacheControl: promptCache.hasCacheControl,
++  };
++}
++
++function completeAnthropicUsage(usage, inputEstimate, { includeImageFloor = false, outputText = '' } = {}) {
++  const out = {
++    input_tokens: Math.max(0, Number(usage?.input_tokens) || 0),
++    output_tokens: Math.max(0, Number(usage?.output_tokens) || 0),
++    cache_creation_input_tokens: Math.max(0, Number(usage?.cache_creation_input_tokens) || 0),
++    cache_read_input_tokens: Math.max(0, Number(usage?.cache_read_input_tokens) || 0),
++  };
++  const estimatedInput = Math.max(1, Number(inputEstimate?.inputTokens) || 0);
++  if (!out.input_tokens) out.input_tokens = estimatedInput;
++  if (includeImageFloor && inputEstimate?.imageTokens && out.input_tokens < estimatedInput) {
++    out.input_tokens = estimatedInput;
++  }
++  if (!out.output_tokens && outputText) {
++    out.output_tokens = Math.max(1, estimateTextTokens(outputText.length, CHARS_PER_OUTPUT_TOKEN));
++  }
++  return out;
+@@ -143,3 +330,3 @@ function anthropicContentToOpenAI(content) {
+-        // Assistant-side reasoning. Keep it visible as <thinking> so that if
+-        // the model reads prior turns it can see its own reasoning.
+-        if (block.thinking) textParts.push(`<thinking>${block.thinking}</thinking>`);
++        // Do not replay prior reasoning into Cascade. Claude Code sends
++        // previous thinking blocks back in history; treating them as visible
++        // text makes Cascade over-focus on old safety/self-identity chatter.
+@@ -163 +350 @@ function anthropicContentToOpenAI(content) {
+-          content: flattenToolResultContent(block.content),
++          content: cleanToolResultContent(block.content),
+@@ -200,0 +388,79 @@ function flattenToolResultContent(content) {
++const TOOL_RESULT_CONTEXT_NOTE =
++  'Internal tool output for model context only. Use the substantive result, but do not mention wrapper tags, transfer status, byte-count receipt lines, or internal routing details to the user.';
++
++const CLAUDE_CODE_HINT_RE = /Claude Code|ExitPlanMode|TodoWrite|<system-reminder>|<\/?user_request|Bash tool|Read tool|Write tool|Edit tool|MultiEdit tool|Task tool/i;
++const CLAUDE_CODE_TOOL_NAMES = new Set([
++  'AskUserQuestion',
++  'Bash',
++  'Edit',
++  'ExitPlanMode',
++  'MultiEdit',
++  'Read',
++  'Task',
++  'TodoWrite',
++  'Write',
++]);
++const CLAUDE_CODE_WORKSPACE_FACTS_NOTE =
++  "Workspace facts must come from explicit user paths or current tool results; generic scaffold files are not evidence of the user's local project. Do not name any active workspace unless a current tool result explicitly confirms it.";
++
++function cleanToolResultContent(content) {
++  const raw = flattenToolResultContent(content);
++  const cleaned = raw
++    .replace(/<\/?tool_result\b[^>]*>/gi, '')
++    .split(/\r?\n/)
++    .filter(line => {
++      const trimmed = line.trim();
++      if (!trimmed) return true;
++      if (/^Received\s+[\d.]+\s*(?:[KMGT]?B|bytes?)?\s*\(\d{3}\s+[A-Z]+\)$/i.test(trimmed)) return false;
++      if (/^tool_result\b/i.test(trimmed)) return false;
++      if (/^(?:gateway|proxy|网关|代理).*(?:noise|噪音|ignore|忽略)/i.test(trimmed)) return false;
++      return true;
++    })
++    .join('\n')
++    .trim();
++  return cleaned || '[tool output contained only transport metadata]';
++}
++
++function wrapToolResultForModel(content) {
++  return `${TOOL_RESULT_CONTEXT_NOTE}\n\n${content}`;
++}
++
++function anthropicContentToText(content) {
++  if (typeof content === 'string') return content;
++  if (!Array.isArray(content)) return String(content ?? '');
++  return content.map(block => {
++    if (typeof block?.text === 'string') return block.text;
++    if (typeof block?.content === 'string') return block.content;
++    return '';
++  }).join('');
++}
++
++const PLAN_MODE_FINAL_POSITIVE_RE = /(?:完整计划|最终计划|可执行(?:方案|计划)|实施计划|落地(?:方案|计划|执行)|安装计划|给我一份(?:完整|最终|可执行|可以落地)?.*计划|可以交给(?:工程师|代理|agent).*执行|implementation plan|proposed[_ -]?plan|final plan|complete plan|executable plan|handoff plan|engineering plan|install plan)/i;
++const PLAN_MODE_FINAL_NEGATIVE_RE = /(?:计划是啥|怎么看不懂|看不懂|什么意思|解释|说明|讲一下|修改一下|改一版|调整一下|重新规划|讨论|比较|review|revise|explain|discuss|先别执行|不要执行|别执行|暂不执行|不要退出\s*Plan\s*mode|别退出\s*Plan\s*mode|暂不退出|do not execute|don't execute|do not exit plan mode|stay in plan mode)/i;
++
++function getLatestUserText(messages) {
++  if (!Array.isArray(messages)) return '';
++  const lastUser = [...messages].reverse().find(m => m?.role === 'user');
++  return anthropicContentToText(lastUser?.content).trim();
++}
++
++function hasAnthropicToolNamed(tools, name) {
++  return Array.isArray(tools) && tools.some(t => (t?.name || t?.function?.name) === name);
++}
++
++function isPlanModeFinalIntent(anthropicBody) {
++  if (!hasAnthropicToolNamed(anthropicBody?.tools, 'ExitPlanMode')) return false;
++  const text = getLatestUserText(anthropicBody?.messages);
++  if (!text) return false;
++  if (PLAN_MODE_FINAL_NEGATIVE_RE.test(text)) return false;
++  return PLAN_MODE_FINAL_POSITIVE_RE.test(text);
++}
++
++function isModelIdentityProbe(messages) {
++  if (!Array.isArray(messages)) return false;
++  const lastUser = [...messages].reverse().find(m => m?.role === 'user');
++  const text = anthropicContentToText(lastUser?.content).trim();
++  if (!text) return false;
++  return /(?:你是什么模型|你是基于什么模型|基于什么模型|底层模型|模型基座|什么模型|模型名|which model|what model|base model|underlying model|model name|your model)/i.test(text);
++}
++
+@@ -223,0 +490 @@ function anthropicMessageToOpenAI(msg) {
++      const resultContent = r.is_error ? `[error] ${r.content}` : r.content;
+@@ -227 +494 @@ function anthropicMessageToOpenAI(msg) {
+-        content: r.is_error ? `[error] ${r.content}` : r.content,
++        content: wrapToolResultForModel(resultContent),
+@@ -268,0 +536,15 @@ function anthropicSystemToOpenAI(system) {
++function isClaudeCodeAnthropicBody(anthropicBody, sysText = '') {
++  if (CLAUDE_CODE_HINT_RE.test(sysText)) return true;
++  if (Array.isArray(anthropicBody?.tools)) {
++    if (anthropicBody.tools.some(t => CLAUDE_CODE_TOOL_NAMES.has(t?.name))) return true;
++  }
++  if (Array.isArray(anthropicBody?.messages)) {
++    const recent = anthropicBody.messages
++      .slice(-4)
++      .map(m => anthropicContentToText(m?.content))
++      .join('\n');
++    if (CLAUDE_CODE_HINT_RE.test(recent)) return true;
++  }
++  return false;
++}
++
+@@ -310 +592,6 @@ function buildOpenAIBody(anthropicBody) {
+-  if (sysText) messages.push({ role: 'system', content: sysText });
++  const sysParts = [];
++  if (sysText) sysParts.push(sysText);
++  if (isClaudeCodeAnthropicBody(anthropicBody, sysText) && !sysText.includes(CLAUDE_CODE_WORKSPACE_FACTS_NOTE)) {
++    sysParts.push(CLAUDE_CODE_WORKSPACE_FACTS_NOTE);
++  }
++  if (sysParts.length) messages.push({ role: 'system', content: sysParts.join('\n\n') });
+@@ -357,0 +645,3 @@ function openaiUsageToAnthropic(u) {
++  const cacheRead = Math.max(0, u.prompt_tokens_details?.cached_tokens || 0);
++  const cacheCreation = Math.max(0, u.cache_creation_input_tokens || 0);
++  const prompt = Math.max(0, u.prompt_tokens || 0);
+@@ -359,4 +649,4 @@ function openaiUsageToAnthropic(u) {
+-    input_tokens: (u.prompt_tokens || 0) - (u.prompt_tokens_details?.cached_tokens || 0) - (u.cache_creation_input_tokens || 0),
+-    output_tokens: u.completion_tokens || 0,
+-    cache_creation_input_tokens: u.cache_creation_input_tokens || 0,
+-    cache_read_input_tokens: u.prompt_tokens_details?.cached_tokens || 0,
++    input_tokens: Math.max(0, prompt - cacheRead - cacheCreation),
++    output_tokens: Math.max(0, u.completion_tokens || 0),
++    cache_creation_input_tokens: cacheCreation,
++    cache_read_input_tokens: cacheRead,
+@@ -366 +656 @@ function openaiUsageToAnthropic(u) {
+-function openaiResponseToAnthropic(openaiResp, requestedModel) {
++function openaiResponseToAnthropic(openaiResp, requestedModel, { forceModelIdentity = false } = {}) {
+@@ -369,0 +660,2 @@ function openaiResponseToAnthropic(openaiResp, requestedModel) {
++  const toolCalls = Array.isArray(msg.tool_calls) ? msg.tool_calls : [];
++  const hasExitPlanMode = toolCalls.some(tc => isExitPlanModeName(tc.function?.name));
+@@ -371 +663 @@ function openaiResponseToAnthropic(openaiResp, requestedModel) {
+-  if (msg.reasoning_content) {
++  if (EXPOSE_THINKING && msg.reasoning_content) {
+@@ -374 +666,3 @@ function openaiResponseToAnthropic(openaiResp, requestedModel) {
+-  if (msg.content) {
++  if (forceModelIdentity) {
++    content.push({ type: 'text', text: requestedModel });
++  } else if (msg.content && !hasExitPlanMode) {
+@@ -377,2 +671,2 @@ function openaiResponseToAnthropic(openaiResp, requestedModel) {
+-  if (Array.isArray(msg.tool_calls)) {
+-    for (const tc of msg.tool_calls) {
++  if (toolCalls.length) {
++    for (const tc of toolCalls) {
+@@ -380 +674,2 @@ function openaiResponseToAnthropic(openaiResp, requestedModel) {
+-      try { input = JSON.parse(tc.function?.arguments || '{}'); } catch { input = { _raw: tc.function?.arguments || '' }; }
++      const name = tc.function?.name || 'unknown';
++      try { input = JSON.parse(normalizeToolInputJson(name, tc.function?.arguments || '{}', msg.content || '')); } catch { input = { _raw: tc.function?.arguments || '' }; }
+@@ -383,2 +678,2 @@ function openaiResponseToAnthropic(openaiResp, requestedModel) {
+-        id: tc.id || genToolUseId(),
+-        name: tc.function?.name || 'unknown',
++        id: normalizeToolUseId(tc.id),
++        name,
+@@ -406,0 +702,56 @@ function openaiResponseToAnthropic(openaiResp, requestedModel) {
++function normalizeToolUseId(id) {
++  if (typeof id === 'string' && /^toolu_01[1-9A-HJ-NP-Za-km-z]{22}$/.test(id)) return id;
++  return genToolUseId();
++}
++
++function safeParseJson(s) {
++  if (typeof s !== 'string') return null;
++  const cleaned = s
++    .replace(/^\uFEFF/, '')
++    .replace(/[\u200B-\u200D\u2060]/g, '')
++    .trim()
++    .replace(/^```(?:json)?\s*/i, '')
++    .replace(/```\s*$/i, '')
++    .trim();
++  if (!cleaned) return {};
++  try { return JSON.parse(cleaned); } catch {}
++  try {
++    return JSON.parse(cleaned
++      .replace(/,\s*([}\]])/g, '$1')
++      .replace(/([{,]\s*)'([^']*?)'\s*:/g, '$1"$2":')
++      .replace(/:\s*'([^']*?)'/g, ': "$1"'));
++  } catch { return null; }
++}
++
++function isExitPlanModeName(name) {
++  return String(name || '') === 'ExitPlanMode';
++}
++
++function normalizeToolInputJson(toolName, rawJson, fallbackPlanText = '') {
++  let parsed = safeParseJson(rawJson);
++  if (typeof parsed === 'string') {
++    const nested = safeParseJson(parsed);
++    parsed = nested ?? (isExitPlanModeName(toolName) ? { plan: parsed } : { _raw: parsed });
++  }
++  if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) {
++    parsed = rawJson
++      ? (isExitPlanModeName(toolName) ? { plan: String(rawJson) } : { _raw: String(rawJson) })
++      : {};
++  }
++
++  if (isExitPlanModeName(toolName)) {
++    if (!('plan' in parsed) && parsed.input && typeof parsed.input === 'object' && !Array.isArray(parsed.input)) {
++      parsed = parsed.input;
++    }
++    if (!('plan' in parsed) && parsed.arguments && typeof parsed.arguments === 'object' && !Array.isArray(parsed.arguments)) {
++      parsed = parsed.arguments;
++    }
++    if (typeof parsed.plan !== 'string' || !parsed.plan.trim()) {
++      parsed.plan = fallbackPlanText.trim();
++    }
++    if (typeof parsed.plan !== 'string') parsed.plan = String(parsed.plan ?? '');
++  }
++
++  return JSON.stringify(parsed ?? {});
++}
++
+@@ -422 +773 @@ class AnthropicStreamTransform {
+-  constructor(realRes, requestedModel) {
++  constructor(realRes, requestedModel, { exposeThinking = EXPOSE_THINKING, forceModelIdentity = false, inputUsageEstimate = null } = {}) {
+@@ -424,0 +776,3 @@ class AnthropicStreamTransform {
++    this.exposeThinking = exposeThinking;
++    this.forceModelIdentity = forceModelIdentity;
++    this.forcedIdentitySent = false;
+@@ -433 +787 @@ class AnthropicStreamTransform {
+-    this.toolBlockByOaiIdx = new Map(); // OpenAI tool_calls[i].index → Anthropic block idx
++    this.toolBlockByOaiIdx = new Map(); // OpenAI tool_calls[i].index → tool block state
+@@ -436 +790,8 @@ class AnthropicStreamTransform {
+-    this.usage = { input_tokens: 0, output_tokens: 0, cache_creation_input_tokens: 0, cache_read_input_tokens: 0 };
++    this.inputUsageEstimate = inputUsageEstimate || { inputTokens: 1, imageTokens: 0 };
++    this.usage = {
++      input_tokens: Math.max(1, Number(this.inputUsageEstimate.inputTokens) || 1),
++      output_tokens: 0,
++      cache_creation_input_tokens: 0,
++      cache_read_input_tokens: 0,
++    };
++    this.outputCharCount = 0;
+@@ -465 +826 @@ class AnthropicStreamTransform {
+-        usage: { input_tokens: 0, output_tokens: 0, cache_creation_input_tokens: 0, cache_read_input_tokens: 0 },
++        usage: { ...this.usage },
+@@ -485,0 +847,15 @@ class AnthropicStreamTransform {
++  _emitTextDelta(text) {
++    if (!text) return;
++    this._openTextBlock();
++    this.outputCharCount += text.length;
++    this._sendEvent('content_block_delta', {
++      index: this.textBlockIdx,
++      delta: { type: 'text_delta', text },
++    });
++  }
++
++  _handleTextDelta(text) {
++    if (!text) return;
++    this._emitTextDelta(text);
++  }
++
+@@ -502 +878,23 @@ class AnthropicStreamTransform {
+-    if (this.toolBlockByOaiIdx.has(oaiIdx)) return this.toolBlockByOaiIdx.get(oaiIdx);
++    const existing = this.toolBlockByOaiIdx.get(oaiIdx);
++    if (existing) {
++      if (!existing.name && toolCall.function?.name) existing.name = toolCall.function.name;
++      if (!existing.opened && existing.name) this._emitToolBlockStart(existing);
++      return existing;
++    }
++    const name = toolCall.function?.name || '';
++    const state = {
++      blockIdx: this.nextBlockIdx++,
++      id: normalizeToolUseId(toolCall.id),
++      name,
++      argumentParts: [],
++      argumentsFlushed: false,
++      opened: false,
++    };
++    this.toolBlockByOaiIdx.set(oaiIdx, state);
++    if (state.name) this._emitToolBlockStart(state);
++    return state;
++  }
++
++  _emitToolBlockStart(state) {
++    if (!state || state.opened) return;
++    if (!state.name) state.name = 'unknown';
+@@ -505,2 +903 @@ class AnthropicStreamTransform {
+-    const idx = this.nextBlockIdx++;
+-    this.toolBlockByOaiIdx.set(oaiIdx, idx);
++    state.opened = true;
+@@ -508 +905 @@ class AnthropicStreamTransform {
+-      index: idx,
++      index: state.blockIdx,
+@@ -511,2 +908,2 @@ class AnthropicStreamTransform {
+-        id: toolCall.id || genToolUseId(),
+-        name: toolCall.function?.name || 'unknown',
++        id: state.id,
++        name: state.name,
+@@ -516 +913,12 @@ class AnthropicStreamTransform {
+-    return idx;
++  }
++
++  _flushToolArguments(state) {
++    if (!state || state.argumentsFlushed) return;
++    state.argumentsFlushed = true;
++    this._emitToolBlockStart(state);
++    const partialJson = normalizeToolInputJson(state.name, state.argumentParts.join(''));
++    if (isExitPlanModeName(state.name)) this.stopReason = 'tool_use';
++    this._sendEvent('content_block_delta', {
++      index: state.blockIdx,
++      delta: { type: 'input_json_delta', partial_json: partialJson },
++    });
+@@ -520,2 +928,3 @@ class AnthropicStreamTransform {
+-    for (const idx of this.toolBlockByOaiIdx.values()) {
+-      this._sendEvent('content_block_stop', { index: idx });
++    for (const state of this.toolBlockByOaiIdx.values()) {
++      this._flushToolArguments(state);
++      this._sendEvent('content_block_stop', { index: state.blockIdx });
+@@ -529,0 +939,10 @@ class AnthropicStreamTransform {
++    if (this.forceModelIdentity) {
++      if (chunk.usage) {
++        this.usage = completeAnthropicUsage(openaiUsageToAnthropic(chunk.usage), this.inputUsageEstimate, {
++          includeImageFloor: !!this.inputUsageEstimate?.imageTokens,
++        });
++      }
++      if (finish) this.stopReason = FINISH_TO_STOP_REASON[finish] || 'end_turn';
++      return;
++    }
++
+@@ -531 +950 @@ class AnthropicStreamTransform {
+-    if (typeof delta.reasoning_content === 'string' && delta.reasoning_content.length) {
++    if (this.exposeThinking && typeof delta.reasoning_content === 'string' && delta.reasoning_content.length) {
+@@ -541,5 +960 @@ class AnthropicStreamTransform {
+-      this._openTextBlock();
+-      this._sendEvent('content_block_delta', {
+-        index: this.textBlockIdx,
+-        delta: { type: 'text_delta', text: delta.content },
+-      });
++      this._handleTextDelta(delta.content);
+@@ -552 +967,4 @@ class AnthropicStreamTransform {
+-        const blockIdx = this._openToolBlock(oaiIdx, tc);
++        const state = this._openToolBlock(oaiIdx, tc);
++        if (tc.function?.name && (!state.name || state.name === 'unknown')) {
++          state.name = tc.function.name;
++        }
+@@ -554,4 +972 @@ class AnthropicStreamTransform {
+-          this._sendEvent('content_block_delta', {
+-            index: blockIdx,
+-            delta: { type: 'input_json_delta', partial_json: tc.function.arguments },
+-          });
++          state.argumentParts.push(tc.function.arguments);
+@@ -562,2 +977,7 @@ class AnthropicStreamTransform {
+-    // Absorb usage if the chunk carries it (chat.js emits it with the final chunk)
+-    if (chunk.usage) this.usage = openaiUsageToAnthropic(chunk.usage);
++    // Absorb usage if the chunk carries it (chat.js emits it with the final chunk).
++    // Keep the request-local image floor because upstream usage may omit vision cost.
++    if (chunk.usage) {
++      this.usage = completeAnthropicUsage(openaiUsageToAnthropic(chunk.usage), this.inputUsageEstimate, {
++        includeImageFloor: !!this.inputUsageEstimate?.imageTokens,
++      });
++    }
+@@ -572,0 +993,9 @@ class AnthropicStreamTransform {
++    if (this.forceModelIdentity && !this.forcedIdentitySent) {
++      this.forcedIdentitySent = true;
++      this._openTextBlock();
++      this.outputCharCount += this.model.length;
++      this._sendEvent('content_block_delta', {
++        index: this.textBlockIdx,
++        delta: { type: 'text_delta', text: this.model },
++      });
++    }
+@@ -576,0 +1006,3 @@ class AnthropicStreamTransform {
++    if (!this.usage.output_tokens && this.outputCharCount > 0) {
++      this.usage.output_tokens = Math.max(1, estimateTextTokens(this.outputCharCount, CHARS_PER_OUTPUT_TOKEN));
++    }
+@@ -655,0 +1088 @@ export async function handleMessages(anthropicBody, deps = {}) {
++  const inputUsageEstimate = estimateAnthropicInputUsage(anthropicBody);
+@@ -657,0 +1091,8 @@ export async function handleMessages(anthropicBody, deps = {}) {
++  const forceModelIdentity = isModelIdentityProbe(anthropicBody.messages);
++  const planModeFinalIntent = isPlanModeFinalIntent(anthropicBody);
++  if (inputUsageEstimate.hasCacheControl) {
++    openaiBody._anthropicCacheControl = {
++      blocks: inputUsageEstimate.cacheControlBlocks,
++      intent: 'ephemeral',
++    };
++  }
+@@ -660 +1101 @@ export async function handleMessages(anthropicBody, deps = {}) {
+-  log.info(`Messages: anthropic→openai model=${anthropicBody.model}${inEffort ? ` effort=${inEffort}` : ''} → ${openaiBody.model} stream=${openaiBody.stream} msgs=${openaiBody.messages.length} tools=${openaiBody.tools?.length || 0}`);
++  log.info(`Messages: anthropic→openai model=${anthropicBody.model}${inEffort ? ` effort=${inEffort}` : ''} → ${openaiBody.model} stream=${openaiBody.stream} msgs=${openaiBody.messages.length} tools=${openaiBody.tools?.length || 0} images=${inputUsageEstimate.imageCount} cache_control=${inputUsageEstimate.cacheControlBlocks}`);
+@@ -663,0 +1105 @@ export async function handleMessages(anthropicBody, deps = {}) {
++  openaiBody._fromAnthropicMessages = true;
+@@ -664,0 +1107 @@ export async function handleMessages(anthropicBody, deps = {}) {
++  if (planModeFinalIntent) openaiBody._planModeFinalIntent = true;
+@@ -687,0 +1131 @@ export async function handleMessages(anthropicBody, deps = {}) {
++        headers: result.headers || {},
+@@ -691,4 +1135,6 @@ export async function handleMessages(anthropicBody, deps = {}) {
+-    return {
+-      status: 200,
+-      body: openaiResponseToAnthropic(result.body, requestedModel),
+-    };
++    const body = openaiResponseToAnthropic(result.body, requestedModel, { forceModelIdentity });
++    body.usage = completeAnthropicUsage(body.usage, inputUsageEstimate, {
++      includeImageFloor: !!inputUsageEstimate.imageTokens,
++      outputText: anthropicContentToText(body.content),
++    });
++    return { status: 200, body, headers: result.headers || {} };
+@@ -717 +1163 @@ export async function handleMessages(anthropicBody, deps = {}) {
+-      const wrapper = new AnthropicStreamTransform(realRes, requestedModel);
++      const wrapper = new AnthropicStreamTransform(realRes, requestedModel, { forceModelIdentity, inputUsageEstimate });
+@@ -735,0 +1182,9 @@ export async function handleMessages(anthropicBody, deps = {}) {
++
++export const __testing = {
++  AnthropicStreamTransform,
++  completeAnthropicUsage,
++  estimateAnthropicInputUsage,
++  genMsgId,
++  genToolUseId,
++  normalizeToolInputJson,
++};
+diff --git a/src/handlers/responses.js b/src/handlers/responses.js
+index f66cc2a..fd3a12a 100644
+--- a/src/handlers/responses.js
++++ b/src/handlers/responses.js
+@@ -542 +542 @@ export async function handleResponses(body, deps = {}) {
+-    return { status: 200, body: chatToResponse(result.body, requestedModel, responseId) };
++    return { status: 200, body: chatToResponse(result.body, requestedModel, responseId), headers: result.headers || {} };
+@@ -555,0 +556 @@ export async function handleResponses(body, deps = {}) {
++      ...(streamResult.headers || {}),
+diff --git a/src/server.js b/src/server.js
+index 4c25117..c848810 100644
+--- a/src/server.js
++++ b/src/server.js
+@@ -14,0 +15 @@ import http from 'http';
++import { randomUUID } from 'crypto';
+@@ -19,0 +21 @@ import {
++  getAccountDiagnostics,
+@@ -26,0 +29,2 @@ import { handleDashboardApi } from './dashboard/api.js';
++import { getStats } from './dashboard/stats.js';
++import { getLogs } from './dashboard/logger.js';
+@@ -28,0 +33 @@ import { callerKeyFromRequest } from './caller-key.js';
++import { getModelCatalogSummary } from './models.js';
+@@ -31,0 +37,7 @@ const __dirname = dirname(fileURLToPath(import.meta.url));
++const STARTED_AT = new Date().toISOString();
++const API_ROUTES = [
++  'GET /v1/models',
++  'POST /v1/chat/completions',
++  'POST /v1/responses',
++  'POST /v1/messages',
++];
+@@ -52 +64 @@ function extractToken(req) {
+-function json(res, status, body) {
++function json(res, status, body, extraHeaders = {}) {
+@@ -58,0 +71 @@ function json(res, status, body) {
++    ...extraHeaders,
+@@ -62,0 +76,41 @@ function json(res, status, body) {
++function singleHeader(value, fallback = '') {
++  if (Array.isArray(value)) return value[0] || fallback;
++  return typeof value === 'string' && value ? value : fallback;
++}
++
++function buildAnthropicHeaders(req, includeRateLimitFallbacks = true) {
++  const reset = new Date(Date.now() + 60_000).toISOString();
++  const version = singleHeader(req.headers['anthropic-version'], '2023-06-01');
++  const headers = {
++    'request-id': `req_${randomUUID().replace(/-/g, '')}`,
++    'anthropic-version': version,
++  };
++  if (!includeRateLimitFallbacks) return headers;
++  return {
++    ...headers,
++    'anthropic-ratelimit-requests-limit': '1000',
++    'anthropic-ratelimit-requests-remaining': '999',
++    'anthropic-ratelimit-requests-reset': reset,
++    'anthropic-ratelimit-tokens-limit': '200000',
++    'anthropic-ratelimit-tokens-remaining': '200000',
++    'anthropic-ratelimit-tokens-reset': reset,
++    'anthropic-ratelimit-input-tokens-limit': '200000',
++    'anthropic-ratelimit-input-tokens-remaining': '200000',
++    'anthropic-ratelimit-input-tokens-reset': reset,
++    'anthropic-ratelimit-output-tokens-limit': '8000',
++    'anthropic-ratelimit-output-tokens-remaining': '8000',
++    'anthropic-ratelimit-output-tokens-reset': reset,
++  };
++}
++
++function recentErrorLogs(limit = 8) {
++  return getLogs()
++    .filter(e => e.level === 'warn' || e.level === 'error')
++    .slice(-limit)
++    .map(e => ({
++      ts: new Date(e.ts).toISOString(),
++      level: e.level,
++      message: String(e.msg || '').slice(0, 240),
++    }));
++}
++
+@@ -69 +123,3 @@ async function route(req, res) {
+-    const counts = getAccountCount();
++    const stats = getStats();
++    const accountPool = getAccountDiagnostics();
++    const modelCatalog = getModelCatalogSummary();
+@@ -74,2 +130,17 @@ async function route(req, res) {
+-      uptime: Math.round(process.uptime()),
+-      accounts: counts,
++      startedAt: STARTED_AT,
++      uptimeSeconds: Math.round(process.uptime()),
++      routes: API_ROUTES,
++      authenticated: isAuthenticated(),
++      accounts: getAccountCount(),
++      accountPool,
++      models: modelCatalog,
++      stats: {
++        startedAt: new Date(stats.startedAt).toISOString(),
++        totalRequests: stats.totalRequests,
++        successCount: stats.successCount,
++        errorCount: stats.errorCount,
++        successRate: stats.totalRequests > 0
++          ? Number(((stats.successCount / stats.totalRequests) * 100).toFixed(1))
++          : 0,
++      },
++      recentErrors: recentErrorLogs(),
+@@ -222 +293 @@ async function route(req, res) {
+-      json(res, result.status, result.body);
++      json(res, result.status, result.body, result.headers || {});
+@@ -247 +318 @@ async function route(req, res) {
+-      json(res, result.status, result.body);
++      json(res, result.status, result.body, result.headers || {});
+@@ -254,0 +326 @@ async function route(req, res) {
++    const anthropicHeaders = buildAnthropicHeaders(req);
+@@ -256 +328 @@ async function route(req, res) {
+-      return json(res, 503, { type: 'error', error: { type: 'authentication_error', message: 'No active accounts. POST /auth/login to add accounts.' } });
++      return json(res, 503, { type: 'error', error: { type: 'authentication_error', message: 'No active accounts. POST /auth/login to add accounts.' } }, anthropicHeaders);
+@@ -260 +332 @@ async function route(req, res) {
+-      return json(res, 400, { type: 'error', error: { type: 'invalid_request_error', message: 'Invalid JSON' } });
++      return json(res, 400, { type: 'error', error: { type: 'invalid_request_error', message: 'Invalid JSON' } }, anthropicHeaders);
+@@ -263 +335 @@ async function route(req, res) {
+-      return json(res, 400, { type: 'error', error: { type: 'invalid_request_error', message: 'messages must be a non-empty array' } });
++      return json(res, 400, { type: 'error', error: { type: 'invalid_request_error', message: 'messages must be a non-empty array' } }, anthropicHeaders);
+@@ -265,0 +338,3 @@ async function route(req, res) {
++    const responseAnthropicHeaders = result.status === 429
++      ? buildAnthropicHeaders(req, false)
++      : anthropicHeaders;
+@@ -271 +346 @@ async function route(req, res) {
+-      res.writeHead(result.status, { 'Access-Control-Allow-Origin': '*', ...result.headers });
++      res.writeHead(result.status, { 'Access-Control-Allow-Origin': '*', ...responseAnthropicHeaders, ...result.headers });
+@@ -275 +350 @@ async function route(req, res) {
+-      json(res, result.status, result.body);
++      json(res, result.status, result.body, { ...responseAnthropicHeaders, ...(result.headers || {}) });
+@@ -311 +386 @@ export function startServer() {
+-      setTimeout(() => server.listen(config.port, '0.0.0.0'), 3000);
++      setTimeout(() => server.listen(config.port, config.host), 3000);
+@@ -319,2 +394,2 @@ export function startServer() {
+-  server.listen({ port: config.port, host: '0.0.0.0' }, () => {
+-    log.info(`Server on http://0.0.0.0:${config.port}`);
++  server.listen({ port: config.port, host: config.host }, () => {
++    log.info(`Server on http://${config.host}:${config.port}`);
